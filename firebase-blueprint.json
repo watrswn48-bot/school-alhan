@@ -1,0 +1,129 @@
+{
+  "entities": {
+    "students": {
+      "title": "Students",
+      "description": "Deacon school and academy enrolled students",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "code": { "type": "string" },
+        "level": { "type": "string" },
+        "year": { "type": "string" },
+        "deaconRank": { "type": "string" },
+        "phone": { "type": "string" },
+        "fatherPhone": { "type": "string" },
+        "confessionFather": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "dateOfBirth": { "type": "string" },
+        "attendanceGoal": { "type": "number" },
+        "academicHistory": { "type": "array" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "servants": {
+      "title": "Servants",
+      "description": "Deacon academy servants and administrative staff",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "secretCode": { "type": "string" },
+        "assignedLevel": { "type": "string" },
+        "assignedYear": { "type": "string" },
+        "permissions": { "type": "object" }
+      }
+    },
+    "liturgies": {
+      "title": "Liturgies",
+      "description": "Liturgy attendance sessions and records",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "name": { "type": "string" },
+        "attendanceList": { "type": "array" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "lectures": {
+      "title": "Lectures",
+      "description": "Educational class and lecture sessions",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "title": { "type": "string" },
+        "level": { "type": "string" },
+        "year": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "lecture_attendance": {
+      "title": "Lecture Attendance",
+      "description": "Attendance tracking for each lecture",
+      "properties": {
+        "id": { "type": "string" },
+        "lectureId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "attended": { "type": "boolean" },
+        "arrivedAt": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "subject_results": {
+      "title": "Subject Results",
+      "description": "Hymns, Coptic, Rites, and dogma examination scores",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "semester": { "type": "string" },
+        "maxScore": { "type": "number" },
+        "score": { "type": "number" },
+        "passingScore": { "type": "number" },
+        "notes": { "type": "string" }
+      }
+    },
+    "behavior_notes": {
+      "title": "Behavior Notes",
+      "description": "Discipline, praise, and pastoral follow-up notes",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "date": { "type": "string" },
+        "type": { "type": "string" },
+        "note": { "type": "string" },
+        "servantName": { "type": "string" }
+      }
+    },
+    "system_settings": {
+      "title": "System Settings",
+      "description": "Academic levels, years, and platform configuration",
+      "properties": {
+        "id": { "type": "string" },
+        "academicLevels": { "type": "array" },
+        "academicYears": { "type": "array" },
+        "updatedAt": { "type": "string" }
+      }
+    },
+    "curricula": {
+      "title": "Curricula and Study Materials",
+      "description": "Educational curricula, hymns audio, rites notes, and study files uploaded for students",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "subject": { "type": "string" },
+        "levelName": { "type": "string" },
+        "yearName": { "type": "string" },
+        "materialType": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "fileData": { "type": "string" },
+        "fileName": { "type": "string" },
+        "fileSize": { "type": "string" },
+        "contentNotes": { "type": "string" },
+        "uploadedBy": { "type": "string" },
+        "uploadedById": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    }
+  }
+}

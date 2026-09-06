@@ -1,0 +1,10 @@
+{
+  "name": "Deacon School & Academy Management System",
+  "description": "منصة إدارة مدرسة الشماس والأكاديمية - متابعة الحضور والغياب، المناهج، رصد نتائج الامتحانات، والبطاقات الذكية والملف التراكمي",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
