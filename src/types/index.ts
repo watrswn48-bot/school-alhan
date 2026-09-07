@@ -3,28 +3,30 @@
  * منصة الشماس والأكاديمية - نظام إدارة مدرسة الشمامسة
  */
 
-export type DeaconRank = 'لم يشرس' | 'إبصالتس' | 'أغنسطس' | 'عريف' | 'إبذياكون' | 'دياكون' | 'أرشيدياكون';
+/** القيم القديمة تبقى مقروءة لحماية البيانات، بينما واجهة الاختيار تعرض الرتب الأربع المطلوبة فقط. */
+export type DeaconRank = 'بدون رتبة' | 'لم يشرس' | 'إبصالتس' | 'أغنسطس' | 'إبذياكون' | 'عريف' | 'دياكون' | 'أرشيدياكون';
 export type AcademicLevel = string;
 export type AcademicYear = string;
 export type YearStatus = 'passed' | 'failed' | 'active' | 'future';
 
-/** صلاحيات مستقلة يحددها الأبونا لكل خادم. */
 export interface ServantPermissions {
-  /** الحضور متاح افتراضياً لكل الخدام */
   canRecordAttendance?: boolean;
   canAddEditStudents?: boolean;
   canUploadFiles?: boolean;
   canSetRatings?: boolean;
   canEvaluateLectures?: boolean;
+  canTeachLectures?: boolean;
   canWriteNotes?: boolean;
   canViewAnalytics?: boolean;
   canManageLectures?: boolean;
   canManageCurricula?: boolean;
   canManageGrades?: boolean;
+  canManageSubjects?: boolean;
+  canManageAcademicYear?: boolean;
   [key: string]: boolean | undefined;
 }
 
-export type ServantRole = 'admin' | 'family_admin' | 'servant';
+export type ServantRole = 'admin' | 'family_admin' | 'senior_servant' | 'junior_servant' | 'servant';
 
 export interface Servant {
   id: string;
@@ -51,6 +53,17 @@ export interface YearProgress {
   archivedAt?: string;
 }
 
+export interface AnnualStudentRecord {
+  academicYear: string;
+  schoolLevel?: string;
+  schoolYear?: string;
+  chantLevel: string;
+  chantYear: string;
+  levelIndex: number;
+  yearIndex: number;
+  archivedAt: string;
+}
+
 export interface Student {
   id: string;
   studentCode: string;
@@ -72,6 +85,7 @@ export interface Student {
   deletedAt?: string;
   createdAt: string;
   history: YearProgress[];
+  annualHistory?: AnnualStudentRecord[];
 }
 
 export interface LiturgyAttendance {
@@ -91,6 +105,7 @@ export interface Lecture {
   id: string;
   title: string;
   speaker: string;
+  speakerServantId?: string;
   levelName: AcademicLevel;
   yearName?: AcademicYear;
   dateStr: string;
