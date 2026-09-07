@@ -12,7 +12,7 @@ patchFile('index.html', s => s.replace(
   '<title>مدرسة تي اتشرومبي للألحان</title>'
 ).replace(
   'منصة إدارة مدرسة الشماس والأكاديمية',
-  'منصة مدرسة تي اتشرومبي للألحان ومدرسة الشمامسة'
+  'مدرسة تي اتشرومبي للألحان'
 ));
 
 patchFile('src/components/CurriculaModule.tsx', s => {
@@ -44,4 +44,29 @@ patchFile('src/components/CurriculaModule.tsx', s => {
   return s;
 });
 
-console.log('Media upload/title patches applied.');
+patchFile('src/components/LoginModule.tsx', s => {
+  if (!s.includes("import { SiteFooter } from './SiteFooter';")) {
+    s = s.replace("import { QRScannerModal } from './QRScannerModal';", "import { QRScannerModal } from './QRScannerModal';\nimport { SiteFooter } from './SiteFooter';");
+  }
+  s = s.replace(
+    'min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-4 relative overflow-hidden font-[\'Tajawal\']',
+    'min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden font-[\'Tajawal\']'
+  );
+  s = s.replace('أكاديمية ومدرسة الشماس المعتمدة', 'مدرسة تي اتشرومبي للألحان');
+  s = s.replace('منصة الشماس والأكاديمية', 'مدرسة تي اتشرومبي للألحان');
+  s = s.replace('أهلاً بك في نظام المتابعة الرقمي - اختر نوع الدخول للمتابعة', 'أهلاً بك في مدرسة تي اتشرومبي للألحان - اختر نوع الدخول للمتابعة');
+  const end = '</div>\n  );\n};';
+  if (s.includes(end) && !s.includes('<SiteFooter />')) s = s.replace(end, '</div>\n      <SiteFooter />\n  );\n};');
+  return s;
+});
+
+patchFile('src/App.tsx', s => {
+  if (!s.includes("import { SiteFooter } from './components/SiteFooter';")) {
+    s = s.replace("import { SmartIDCardModal } from './components/SmartIDCardModal';", "import { SmartIDCardModal } from './components/SmartIDCardModal';\nimport { SiteFooter } from './components/SiteFooter';");
+  }
+  s = s.replace('</main></div><SmartIDCardModal', '</main><SiteFooter /></div><SmartIDCardModal');
+  s = s.replace('</main></div></div>;', '</main><SiteFooter /></div></div>;');
+  return s;
+});
+
+console.log('Media upload/title/branding/footer patches applied.');
