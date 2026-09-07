@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -20,17 +20,35 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      - name: Apply integrated project patches
+        run: node scripts/apply-required-patches.mjs
+
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: TypeScript check
+        run: npm run lint
+
       - name: Build
         run: npm run build
+
+      - name: Commit verified generated patches
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/services/storage.ts src/components/ClassesAndStudentsModule.tsx src/components/AdminPanelModule.tsx
+            git commit -m "feat: apply integrated school rules and permissions patches"
+            git push origin HEAD:main
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
