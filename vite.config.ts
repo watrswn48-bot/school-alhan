@@ -3,8 +3,11 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// https://vitejs.dev/config/
+// GitHub Pages serves this app from /school-alhan/ rather than the domain root.
+const base = '/school-alhan/';
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     tailwindcss(),
@@ -12,23 +15,23 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
-        id: '/',
+        id: base,
         name: 'Deacon School & Academy Management System - نظام إدارة مدرسة الشماس',
         short_name: 'مدرسة الشماس',
         description: 'منصة إدارة مدرسة الشماس والأكاديمية - متابعة الحضور والغياب، المناهج، رصد نتائج الامتحانات، والبطاقات الذكية',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
-        start_url: '/',
-        scope: '/',
+        start_url: base,
+        scope: base,
         icons: [
           {
-            src: '/pwa-192x192.png',
+            src: `${base}pwa-192x192.png`,
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: '/pwa-512x512.png',
+            src: `${base}pwa-512x512.png`,
             sizes: '512x512',
             type: 'image/png',
           },
