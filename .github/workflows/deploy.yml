@@ -31,6 +31,9 @@ jobs:
       - name: Apply integrated project patches
         run: node scripts/apply-required-patches.mjs
 
+      - name: Apply media upload and site title patches
+        run: node scripts/fix-media-upload.mjs
+
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
@@ -45,8 +48,8 @@ jobs:
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/services/storage.ts src/components/ClassesAndStudentsModule.tsx src/components/AdminPanelModule.tsx
-            git commit -m "feat: apply integrated school rules and permissions patches"
+            git add src/services/storage.ts src/components/ClassesAndStudentsModule.tsx src/components/AdminPanelModule.tsx src/components/CurriculaModule.tsx index.html
+            git commit -m "feat: apply integrated school rules and media upload fixes"
             git push origin HEAD:main
           fi
 
