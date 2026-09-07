@@ -36,6 +36,8 @@ jobs:
         run: node scripts/fix-visibility-and-timezone.mjs
       - name: Apply student add flow patches
         run: node scripts/fix-add-student-flow.mjs
+      - name: Apply persistent student ID card patch
+        run: node scripts/fix-card-persistence.mjs
       - name: Apply 8-year academic matrix patch
         run: node scripts/fix-academic-matrix.mjs
       - name: Remove duplicate materials section from admin
@@ -53,7 +55,7 @@ jobs:
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/services/storage.ts src/services/schoolSystem.ts src/components/ClassesAndStudentsModule.tsx src/components/AdminPanelModule.tsx src/components/CurriculaModule.tsx src/components/LoginModule.tsx src/components/LectureSystemModule.tsx src/components/FridayLiturgyModule.tsx src/components/AnalyticsModule.tsx src/App.tsx index.html scripts/fix-branding-footer.mjs scripts/fix-visibility-and-timezone.mjs scripts/fix-add-student-flow.mjs scripts/fix-academic-matrix.mjs scripts/fix-admin-duplicate-materials.mjs scripts/fix-priest-name.mjs src/services/egyptTime.ts
+            git add src/services/storage.ts src/services/schoolSystem.ts src/components/ClassesAndStudentsModule.tsx src/components/AdminPanelModule.tsx src/components/CurriculaModule.tsx src/components/LoginModule.tsx src/components/LectureSystemModule.tsx src/components/FridayLiturgyModule.tsx src/components/AnalyticsModule.tsx src/App.tsx src/components/AddStudentModule.tsx index.html scripts/fix-branding-footer.mjs scripts/fix-visibility-and-timezone.mjs scripts/fix-add-student-flow.mjs scripts/fix-card-persistence.mjs scripts/fix-academic-matrix.mjs scripts/fix-admin-duplicate-materials.mjs scripts/fix-priest-name.mjs src/services/egyptTime.ts
             git commit -m "fix: remove duplicate materials section from admin"
             git push origin HEAD:main
           fi
