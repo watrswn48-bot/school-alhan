@@ -223,7 +223,7 @@ export async function recordFridayAttendance(student: Student, recordedBy: strin
   const raw = (()=>{try{return JSON.parse(localStorage.getItem(LITURGIES_KEY)||'[]') as LiturgyAttendance[];}catch{return [];}})();
   raw.unshift(record); localStorage.setItem(LITURGIES_KEY, JSON.stringify(raw));
   window.dispatchEvent(new CustomEvent('deacon_data_updated', { detail: { source: 'liturgy' } }));
-  try { await setDoc(doc(db, 'liturgyAttendance', record.id), record, { merge: true }); } catch (e) { console.warn('Liturgy write queued/offline:', e); }
+  try { await setDoc(doc(db, 'liturgies', record.id), record, { merge: true }); } catch (e) { console.warn('Liturgy write queued/offline:', e); }
   return { success: true, message: `تم تسجيل حضور ${student.fullName}.`, record };
 }
 

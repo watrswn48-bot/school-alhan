@@ -19,6 +19,7 @@ import {
 import { UserSession } from '../types';
 import { getServants, getStudents, getSchoolLogo } from '../services/storage';
 import { QRScannerModal } from './QRScannerModal';
+import { SiteFooter } from './SiteFooter';
 
 interface LoginModuleProps {
   onLoginSuccess: (session: UserSession) => void;
@@ -114,7 +115,7 @@ export const LoginModule: React.FC<LoginModuleProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-4 relative overflow-hidden font-['Tajawal']">
+    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-4 relative overflow-hidden font-['Tajawal']">
       {/* Background School Logo Watermark */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center select-none" aria-hidden="true">
         <div className="w-[500px] h-[500px] sm:w-[700px] sm:h-[700px] max-w-[90vw] max-h-[90vh] rounded-full overflow-hidden opacity-10 border-4 border-amber-400/20 shadow-2xl transition-all duration-700 filter contrast-125">
@@ -146,14 +147,14 @@ export const LoginModule: React.FC<LoginModuleProps> = ({ onLoginSuccess }) => {
           </div>
           <div>
             <span className="inline-block px-3 py-1 bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[11px] font-black rounded-full shadow-xs mb-2">
-              أكاديمية ومدرسة الشماس المعتمدة
+              مدرسة تي اتشرومبي للألحان
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight">
-              منصة الشماس والأكاديمية
+              مدرسة تي اتشرومبي للألحان
             </h2>
           </div>
           <p className="text-xs text-slate-400">
-            أهلاً بك في نظام المتابعة الرقمي - اختر نوع الدخول للمتابعة
+            أهلاً بك في مدرسة تي اتشرومبي للألحان - اختر نوع الدخول للمتابعة
           </p>
         </div>
 
@@ -357,6 +358,7 @@ export const LoginModule: React.FC<LoginModuleProps> = ({ onLoginSuccess }) => {
             : 'مسح الـ QR Code من بطاقة الهوية الذكية للطالب'
         }
       />
+      <SiteFooter />
     </div>
   );
 };
