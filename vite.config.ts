@@ -16,12 +16,15 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
         id: base,
-        name: 'Deacon School & Academy Management System - نظام إدارة مدرسة الشماس',
-        short_name: 'مدرسة الشماس',
-        description: 'منصة إدارة مدرسة الشماس والأكاديمية - متابعة الحضور والغياب، المناهج، رصد نتائج الامتحانات، والبطاقات الذكية',
+        name: 'مدرسة تي اتشرومبي للألحان',
+        short_name: 'مدرسة الألحان',
+        description: 'تطبيق إدارة مدرسة تي اتشرومبي للألحان ومتابعة الحضور والنتائج والمحاضرات والطلاب',
+        lang: 'ar',
+        dir: 'rtl',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
+        orientation: 'portrait-primary',
         start_url: base,
         scope: base,
         icons: [
