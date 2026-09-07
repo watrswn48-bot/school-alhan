@@ -22,48 +22,39 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - name: Apply integrated project patches
         run: node scripts/apply-required-patches.mjs
-
       - name: Apply safe branding and footer patches
         run: node scripts/fix-branding-footer.mjs
-
       - name: Apply media upload and site title patches
         run: node scripts/fix-media-upload.mjs
-
+      - name: Apply visibility and timezone patches
+        run: node scripts/fix-visibility-and-timezone.mjs
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-
       - name: TypeScript check
         run: npm run lint
-
       - name: Build
         run: npm run build
-
       - name: Commit verified generated patches
         run: |
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/services/storage.ts src/services/schoolSystem.ts src/components/ClassesAndStudentsModule.tsx src/components/AdminPanelModule.tsx src/components/CurriculaModule.tsx src/components/LoginModule.tsx src/App.tsx index.html scripts/fix-branding-footer.mjs
-            git commit -m "feat: apply verified school branding and footer fixes"
+            git add src/services/storage.ts src/services/schoolSystem.ts src/components/ClassesAndStudentsModule.tsx src/components/AdminPanelModule.tsx src/components/CurriculaModule.tsx src/components/LoginModule.tsx src/components/LectureSystemModule.tsx src/components/FridayLiturgyModule.tsx src/App.tsx index.html scripts/fix-branding-footer.mjs scripts/fix-visibility-and-timezone.mjs src/services/egyptTime.ts
+            git commit -m "feat: apply Egypt time and servant lecture visibility fixes"
             git push origin HEAD:main
           fi
-
       - name: Setup Pages
         uses: actions/configure-pages@v5
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
-
   deploy:
     environment:
       name: github-pages
