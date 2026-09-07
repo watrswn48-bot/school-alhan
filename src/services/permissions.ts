@@ -1,33 +1,73 @@
 import { ServantPermissions, ServantRole, UserSession, Servant } from '../types';
 
 export const ALL_SERVANT_PERMISSIONS: (keyof ServantPermissions)[] = [
-  'canRecordAttendance', 'canAddEditStudents', 'canUploadFiles', 'canEvaluateLectures',
-  'canManageLectures', 'canManageCurricula', 'canManageGrades', 'canWriteNotes', 'canViewAnalytics',
+  'canRecordAttendance',
+  'canAddEditStudents',
+  'canUploadFiles',
+  'canEvaluateLectures',
+  'canTeachLectures',
+  'canManageLectures',
+  'canManageCurricula',
+  'canManageSubjects',
+  'canManageGrades',
+  'canManageAcademicYear',
+  'canWriteNotes',
+  'canViewAnalytics',
 ];
 
 export const PERMISSION_LABELS: Record<string, string> = {
-  canRecordAttendance: 'تسجيل الحضور والغياب', canAddEditStudents: 'إضافة وتعديل الطلاب',
-  canUploadFiles: 'رفع الملفات والمرفقات', canEvaluateLectures: 'تقييم المحاضرات والـ 5 نجوم',
-  canManageLectures: 'إنشاء وإدارة المحاضرات', canManageCurricula: 'إدارة المناهج ومكتبة الألحان',
-  canManageGrades: 'رصد وإدارة النتائج', canWriteNotes: 'كتابة الملاحظات والسلوك', canViewAnalytics: 'عرض الإحصائيات والتحليلات',
+  canRecordAttendance: 'تسجيل الحضور والغياب',
+  canAddEditStudents: 'إضافة وتعديل الطلاب',
+  canUploadFiles: 'رفع الملفات والمرفقات',
+  canEvaluateLectures: 'تقييم الطلاب بعد المحاضرات',
+  canTeachLectures: 'السماح باختياره كمحاضر',
+  canManageLectures: 'إنشاء وإدارة المحاضرات',
+  canManageCurricula: 'إدارة المناهج ومكتبة الألحان',
+  canManageSubjects: 'إضافة وإدارة مواد مدرسة الألحان',
+  canManageGrades: 'رصد وإدارة النتائج',
+  canManageAcademicYear: 'إدارة ومراجعة السنة الدراسية',
+  canWriteNotes: 'كتابة الملاحظات والسلوك',
+  canViewAnalytics: 'عرض الإحصائيات والتحليلات',
 };
 
-export const ADMIN_PERMISSIONS: ServantPermissions = Object.fromEntries(ALL_SERVANT_PERMISSIONS.map(key => [key, true])) as ServantPermissions;
-export const FAMILY_ADMIN_PERMISSIONS: ServantPermissions = { canRecordAttendance: true, canUploadFiles: true, canEvaluateLectures: true };
-export const SERVANT_PERMISSIONS: ServantPermissions = { canRecordAttendance: true };
+export const ADMIN_PERMISSIONS: ServantPermissions = Object.fromEntries(
+  ALL_SERVANT_PERMISSIONS.map(key => [key, true])
+) as ServantPermissions;
+
+export const FAMILY_ADMIN_PERMISSIONS: ServantPermissions = {
+  canRecordAttendance: true,
+  canUploadFiles: true,
+  canEvaluateLectures: true,
+  canTeachLectures: true,
+};
+
+export const SENIOR_SERVANT_PERMISSIONS: ServantPermissions = {
+  canRecordAttendance: true,
+  canTeachLectures: true,
+  canEvaluateLectures: true,
+};
+
+export const JUNIOR_SERVANT_PERMISSIONS: ServantPermissions = {
+  canRecordAttendance: true,
+};
+
+export function normalizeRole(role?: ServantRole): ServantRole {
+  if (!role || role === 'servant') return 'junior_servant';
+  return role;
+}
 
 export function permissionsForRole(role: ServantRole): ServantPermissions {
-  if (role === 'admin') return { ...ADMIN_PERMISSIONS };
-  if (role === 'family_admin') return { ...FAMILY_ADMIN_PERMISSIONS };
-  return { ...SERVANT_PERMISSIONS };
+  const actual = normalizeRole(role);
+  if (actual === 'admin') return { ...ADMIN_PERMISSIONS };
+  if (actual === 'family_admin') return { ...FAMILY_ADMIN_PERMISSIONS };
+  if (actual === 'senior_servant') return { ...SENIOR_SERVANT_PERMISSIONS };
+  return { ...JUNIOR_SERVANT_PERMISSIONS };
 }
 
 export function normalizeServantPermissions(role: ServantRole | undefined, permissions?: ServantPermissions): ServantPermissions {
-  const actualRole = role || 'servant';
+  const actualRole = normalizeRole(role);
   const base = permissionsForRole(actualRole);
   const incoming = permissions || {};
-  // Only the new granular fields override role defaults. Legacy records had broad permissions
-  // and are intentionally migrated to the safer role defaults instead of retaining old access.
   for (const key of ALL_SERVANT_PERMISSIONS) {
     if (incoming[key] !== undefined) base[key] = incoming[key];
   }
@@ -37,7 +77,7 @@ export function normalizeServantPermissions(role: ServantRole | undefined, permi
 }
 
 export function normalizeServant(servant: Servant): Servant {
-  const role = servant.role || 'servant';
+  const role = normalizeRole(servant.role);
   return { ...servant, role, permissions: normalizeServantPermissions(role, servant.permissions) };
 }
 
@@ -48,7 +88,9 @@ export function sessionHasPermission(session: UserSession | undefined, permissio
 }
 
 export function roleLabel(role?: ServantRole): string {
-  if (role === 'admin') return 'أبونا / مسؤول النظام';
-  if (role === 'family_admin') return 'أمين الأسرة';
-  return 'خادم';
+  const actual = normalizeRole(role);
+  if (actual === 'admin') return 'أبونا';
+  if (actual === 'family_admin') return 'أمين الأسرة';
+  if (actual === 'senior_servant') return 'خادم كبير';
+  return 'خادم صغير';
 }
