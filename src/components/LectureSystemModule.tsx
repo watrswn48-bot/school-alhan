@@ -1,0 +1,70 @@
+import React, { useMemo, useState } from 'react';
+import { BellRing, BookOpen, Camera, CheckCircle2, Plus, Save, X } from 'lucide-react';
+import { Lecture, UserSession } from '../types';
+import { closeLectureAndMarkAbsent, getAcademicLevels, getAcademicYears, getLectureAttendances, getLectures, getServants, getStudents, recordLectureAttendance, saveLecture, saveLectureEvaluation } from '../services/storage';
+import { canEvaluateLecture, isAllowedLecturer, lecturesNeedingEvaluation } from '../services/schoolSystem';
+import { sessionHasPermission } from '../services/permissions';
+import { QRScannerModal } from './QRScannerModal';
+
+export const LectureSystemModule: React.FC<{ session: UserSession }> = ({ session }) => {
+  const [version, setVersion] = useState(0);
+  const [selectedId, setSelectedId] = useState<string>('');
+  const [scanner, setScanner] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const lectures = useMemo(()=>getLectures(),[version]);
+  const selected = lectures.find(l=>l.id===selectedId) || lectures[0];
+  const attendances = useMemo(()=>selected ? getLectureAttendances().filter(a=>a.lectureId===selected.id) : [],[selected?.id,version]);
+  const students = getStudents().filter(s=>!s.isDeleted);
+  const servants = getServants();
+  const lecturers = servants.filter(isAllowedLecturer);
+  const isAdmin = session.role==='admin' || session.userId==='srv-admin-01';
+  const canRecord = isAdmin || sessionHasPermission(session,'canRecordAttendance');
+  const canManage = isAdmin || sessionHasPermission(session,'canManageLectures');
+  const canEvaluatePermission = isAdmin || sessionHasPermission(session,'canEvaluateLectures');
+  const notifications = lecturesNeedingEvaluation(lectures, session.userId, isAdmin);
+  const [form,setForm]=useState({title:'',speakerServantId:'',levelName:getAcademicLevels()[0]||'المستوى الأول',yearName:getAcademicYears()[0]||'السنة الأولى',dateStr:new Date().toISOString().slice(0,10),timeStr:'19:00'});
+  const [ratings,setRatings]=useState<Record<string,number>>({});
+
+  const createLecture=(e:React.FormEvent)=>{
+    e.preventDefault(); if(!canManage) return;
+    const lecturer=lecturers.find(s=>s.id===form.speakerServantId);
+    if(!lecturer){setMessage('يجب اختيار خادم كبير مسموح له بإلقاء المحاضرة.');return;}
+    const lec=saveLecture({title:form.title.trim(),speaker:lecturer.fullName,speakerServantId:lecturer.id,levelName:form.levelName,yearName:form.yearName,dateStr:form.dateStr,timeStr:form.timeStr,createdBy:session.fullName||'الإدارة'});
+    setSelectedId(lec.id);setAddOpen(false);setMessage('تمت إضافة المحاضرة وربطها بالمحاضر.');setVersion(v=>v+1);
+  };
+
+  const scan=async(text:string)=>{
+    if(!selected||!canRecord)return;
+    const code=text.trim();const stu=students.find(s=>s.studentCode===code||s.id===code||code.includes(s.studentCode));
+    if(!stu){setMessage('لم يتم العثور على الطالب.');return;}
+    const r=recordLectureAttendance(selected.id,stu,'committed',undefined,session.userId||'servant',session.fullName||'الخادم');
+    setMessage(r.message);setScanner(false);setVersion(v=>v+1);
+  };
+
+  const closeLecture=()=>{if(!selected||!canManage)return;const r=closeLectureAndMarkAbsent(selected.id);setMessage(`تم إنهاء المحاضرة وتسجيل ${r.closedCount} غياب تلقائي.`);setVersion(v=>v+1);};
+  const allowedToEvaluate=!!selected && canEvaluatePermission && canEvaluateLecture(selected,session.userId,isAdmin);
+  const presentAttendances=attendances.filter(a=>a.status!=='absent');
+  const saveEvaluations=()=>{
+    if(!selected||!allowedToEvaluate)return;
+    const items=presentAttendances.map(a=>({attendanceId:a.id,rating:ratings[a.id]??a.rating??5,note:a.evaluationNote}));
+    const r=saveLectureEvaluation(selected.id,items,session.fullName||'المحاضر');setMessage(r.message);setVersion(v=>v+1);
+  };
+
+  return <div className="space-y-5">
+    {notifications.length>0&&<div className="bg-amber-500/10 border border-amber-500/40 rounded-3xl p-4 sm:p-5 flex gap-3"><BellRing className="w-5 h-5 text-amber-400 shrink-0"/><div><b className="text-amber-300">لديك {notifications.length} محاضرة تحتاج تقييم الطلاب</b><p className="text-xs text-slate-300 mt-1">يمكنك تقييم الطلاب الذين حضروا المحاضرات التي ألقيتها فقط. أبونا يستطيع تقييم أي محاضرة.</p></div></div>}
+    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4"><div><h2 className="text-lg font-black flex items-center gap-2"><BookOpen className="w-5 h-5 text-amber-400"/>المحاضرات والحضور والتقييم</h2><p className="text-xs text-slate-400 mt-1">كل محاضرة مرتبطة بخادم محدد مسؤول عن تقييم الحاضرين.</p></div>{canManage&&<button onClick={()=>setAddOpen(true)} className="px-5 py-2.5 bg-amber-500 text-slate-950 rounded-xl font-black text-sm flex items-center justify-center gap-2"><Plus className="w-4 h-4"/>إضافة محاضرة</button>}</div>
+
+    <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-3 space-y-2 h-fit">{lectures.map(l=><button key={l.id} onClick={()=>setSelectedId(l.id)} className={`w-full text-right p-3 rounded-2xl border ${selected?.id===l.id?'border-amber-500/50 bg-amber-500/10':'border-slate-800 bg-slate-950'}`}><div className="font-bold text-sm">{l.title}</div><div className="text-[11px] text-slate-500 mt-1">{l.speaker} • {l.dateStr}</div><div className={`text-[10px] mt-1 font-bold ${l.status==='active'?'text-emerald-400':'text-slate-500'}`}>{l.status==='active'?'نشطة':'منتهية'}{l.isEvaluated?' • تم التقييم':''}</div></button>)}{!lectures.length&&<div className="text-center text-slate-500 p-8 text-xs">لا توجد محاضرات.</div>}</div>
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl min-w-0 overflow-hidden">{selected?<><div className="p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><div className="font-black">{selected.title}</div><div className="text-xs text-slate-400 mt-1">المحاضر: {selected.speaker} • {selected.levelName} {selected.yearName?`/ ${selected.yearName}`:''}</div></div><div className="flex gap-2 flex-wrap">{selected.status==='active'&&canRecord&&<button onClick={()=>setScanner(true)} className="px-4 py-2 bg-sky-500/15 text-sky-300 rounded-xl text-xs font-bold flex gap-2 items-center"><Camera className="w-4 h-4"/>QR حضور</button>}{selected.status==='active'&&canManage&&<button onClick={closeLecture} className="px-4 py-2 bg-rose-500/15 text-rose-300 rounded-xl text-xs font-bold">إنهاء المحاضرة</button>}</div></div>
+      {message&&<div className="mx-5 mt-4 p-3 rounded-xl bg-amber-500/10 text-amber-300 text-xs">{message}</div>}
+      <div className="overflow-x-auto"><table className="w-full min-w-[680px] text-sm"><thead className="bg-slate-950 text-xs text-slate-400"><tr><th className="p-4 text-right">الطالب</th><th className="p-4">الحالة</th><th className="p-4">التقييم</th></tr></thead><tbody>{attendances.map(a=><tr key={a.id} className="border-t border-slate-800"><td className="p-4 font-bold">{a.studentName}<div className="text-[10px] text-slate-500">{a.studentCode}</div></td><td className={`p-4 text-center font-bold ${a.status==='absent'?'text-rose-400':'text-emerald-400'}`}>{a.status==='absent'?'غائب':a.status==='late'?'متأخر':'حاضر'}</td><td className="p-4 text-center">{a.status==='absent'?'—':allowedToEvaluate&&!selected.isEvaluated?<select value={ratings[a.id]??a.rating??5} onChange={e=>setRatings({...ratings,[a.id]:Number(e.target.value)})} className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2"><option value={1}>1 ⭐</option><option value={2}>2 ⭐</option><option value={3}>3 ⭐</option><option value={4}>4 ⭐</option><option value={5}>5 ⭐</option></select>:<span className="text-amber-300">{a.rating??'—'}{a.rating?' ⭐':''}</span>}</td></tr>)}</tbody></table></div>
+      {selected.status==='elapsed'&&allowedToEvaluate&&!selected.isEvaluated&&<div className="p-4 border-t border-slate-800 flex justify-end"><button onClick={saveEvaluations} className="px-5 py-2.5 bg-emerald-500 text-slate-950 rounded-xl font-black text-sm flex items-center gap-2"><Save className="w-4 h-4"/>حفظ تقييم الحاضرين</button></div>}
+      </>:<div className="p-12 text-center text-slate-500">اختر محاضرة.</div>}</div>
+    </div>
+
+    {addOpen&&<div className="fixed inset-0 z-50 bg-black/70 p-3 flex items-center justify-center"><form onSubmit={createLecture} className="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-3xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto"><div className="flex items-center justify-between"><b>إضافة محاضرة</b><button type="button" onClick={()=>setAddOpen(false)}><X className="w-5 h-5"/></button></div><label className="block text-xs font-bold">عنوان المحاضرة<input required value={form.title} onChange={e=>setForm({...form,title:e.target.value})} className="mt-2 w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5"/></label><label className="block text-xs font-bold">الخادم الذي ألقى المحاضرة<select required value={form.speakerServantId} onChange={e=>setForm({...form,speakerServantId:e.target.value})} className="mt-2 w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5"><option value="">اختر الخادم الكبير...</option>{lecturers.map(s=><option key={s.id} value={s.id}>{s.fullName}</option>)}</select></label><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><select value={form.levelName} onChange={e=>setForm({...form,levelName:e.target.value})} className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5">{getAcademicLevels().map(x=><option key={x}>{x}</option>)}</select><select value={form.yearName} onChange={e=>setForm({...form,yearName:e.target.value})} className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5">{getAcademicYears().map(x=><option key={x}>{x}</option>)}</select></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><input type="date" required value={form.dateStr} onChange={e=>setForm({...form,dateStr:e.target.value})} className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5"/><input type="time" required value={form.timeStr} onChange={e=>setForm({...form,timeStr:e.target.value})} className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5"/></div><button className="w-full bg-amber-500 text-slate-950 rounded-xl py-2.5 font-black">حفظ المحاضرة</button></form></div>}
+    <QRScannerModal isOpen={scanner} onClose={()=>setScanner(false)} onScanSuccess={scan} title="تسجيل حضور المحاضرة"/>
+  </div>;
+};
