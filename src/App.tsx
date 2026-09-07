@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Users, Church, BookOpen, BarChart3, Sliders, UserCheck, GraduationCap, LockKeyhole, BookPlus, BellRing } from 'lucide-react';
 import { UserSession, Student } from './types';
 import { initStorage, getStudents, getSchoolLogo, getServants, getLectures } from './services/storage';
@@ -61,7 +61,7 @@ export default function App() {
   const canCurricula=isAdministrator||sessionHasPermission(session,'canManageCurricula')||sessionHasPermission(session,'canUploadFiles');
   const canGrades=isAdministrator||sessionHasPermission(session,'canManageGrades');
   const canSubjects=isAdministrator||sessionHasPermission(session,'canManageSubjects');
-  const lectureNotifications=useMemo(()=>lecturesNeedingEvaluation(getLectures(),session.userId,isAdministrator),[dataVersion,session.userId,isAdministrator]);
+  const lectureNotifications=lecturesNeedingEvaluation(getLectures(),session.userId,isAdministrator);
 
   const Guard:React.FC<{allowed:boolean;children:React.ReactNode}>=({allowed,children})=>allowed?<>{children}</>:<div className="bg-slate-900 border border-slate-800 rounded-3xl p-10 text-center space-y-3"><LockKeyhole className="w-12 h-12 mx-auto text-amber-500"/><h3 className="text-lg font-bold">هذه الوظيفة غير متاحة لحسابك</h3><p className="text-xs text-slate-400">يمكن لأبونا فتح هذه الصلاحية من إدارة الخدام.</p></div>;
   const nav=(tab:NavTab,icon:React.ReactNode,label:string,allowed=true)=><button onClick={()=>allowed&&setActiveNavTab(tab)} disabled={!allowed} className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all flex items-center gap-2.5 shrink-0 ${activeNavTab===tab?'bg-amber-500 text-slate-950 shadow-lg':'text-slate-400 hover:text-slate-100 hover:bg-slate-900'} ${!allowed?'opacity-40 cursor-not-allowed':''}`}>{icon}<span>{label}</span></button>;
