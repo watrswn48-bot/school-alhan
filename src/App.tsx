@@ -19,7 +19,7 @@ import { CumulativeProfileModal } from './components/CumulativeProfileModal';
 import { SmartIDCardModal } from './components/SmartIDCardModal';
 import { SiteFooter } from './components/SiteFooter';
 
-const SchoolBackgroundWatermark: React.FC<{ logo: string }> = ({ logo }) => <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center select-none"><div className="w-[500px] h-[500px] sm:w-[700px] sm:h-[700px] lg:w-[850px] lg:h-[850px] max-w-[90vw] max-h-[90vh] rounded-full overflow-hidden opacity-10 border-4 border-amber-400/20 shadow-2xl transition-all duration-700"><img src={logo} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" /></div><div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.06)_0%,rgba(15,23,42,0)_70%)]" /></div>;
+const SchoolBackgroundWatermark: React.FC<{ logo: string }> = ({ logo }) => <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center select-none"><div className="w-[500px] h-[500px] sm:w-[700px] sm:h-[700px] lg:w-[850px] lg:h-[850px] max-w-[90vw] max-h-[90vh] rounded-full overflow-hidden opacity-[0.16] border-4 border-amber-400/20 shadow-2xl transition-all duration-700"><img src={logo} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" /></div><div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.06)_0%,rgba(15,23,42,0)_70%)]" /></div>;
 
 type NavTab = 'class1'|'class2'|'class3'|'class4'|'class5'|'class6'|'class7'|'class8'|'admin';
 
