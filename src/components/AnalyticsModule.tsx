@@ -70,10 +70,10 @@ export const AnalyticsModule: React.FC<AnalyticsModuleProps> = ({
     ? students.filter((s) => s.deaconRank === selectedRankForDetail)
     : [];
 
-  // TABLE C DATA: 16-Year Matrix (Sorted by highest completion stage)
+  // TABLE C DATA: 8-Year Matrix (Sorted by highest completion stage)
   const sortedStudentsForMatrix = [...students].sort((a, b) => {
-    const scoreA = a.levelIndex * 4 + a.yearIndex;
-    const scoreB = b.levelIndex * 4 + b.yearIndex;
+    const scoreA = a.levelIndex * ACADEMIC_YEARS.length + a.yearIndex;
+    const scoreB = b.levelIndex * ACADEMIC_YEARS.length + b.yearIndex;
     return scoreB - scoreA;
   });
 
@@ -92,7 +92,7 @@ export const AnalyticsModule: React.FC<AnalyticsModuleProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            إحصائيات الرتب الشماسية، تفاصيل الشمامسة، ومصفوفة التطور الأكاديمي عبر 16 سنة دراسية
+            إحصائيات الرتب الشماسية، تفاصيل الشمامسة، ومصفوفة التطور الأكاديمي عبر 8 سنوات دراسية
           </p>
         </div>
       </div>
@@ -142,13 +142,13 @@ export const AnalyticsModule: React.FC<AnalyticsModuleProps> = ({
         </div>
       </div>
 
-      {/* TABLE C: ACADEMIC PROGRESS MATRIX (16-Year Grid) */}
+      {/* TABLE C: ACADEMIC PROGRESS MATRIX (8-Year Grid) */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
           <div className="flex items-center gap-2">
             <Grid className="w-5 h-5 text-amber-400" />
             <h3 className="text-base font-bold text-slate-100">
-              الجدول (ج): مصفوفة التطور الأكاديمي 16 سنة (Academic Progress Matrix)
+              الجدول (ج): مصفوفة التطور الأكاديمي 8 سنوات (Academic Progress Matrix)
             </h3>
           </div>
 
@@ -186,8 +186,8 @@ export const AnalyticsModule: React.FC<AnalyticsModuleProps> = ({
               </tr>
               {/* Year Headers (1..4) */}
               <tr className="bg-slate-950/80 text-slate-400 text-[10px] border-b border-slate-800">
-                {[0, 1, 2, 3].map((lvlIdx) =>
-                  [0, 1, 2, 3].map((yrIdx) => (
+                {ACADEMIC_LEVELS.map((_, lvlIdx) =>
+                  ACADEMIC_YEARS.map((_, yrIdx) => (
                     <th key={`hdr-${lvlIdx}-${yrIdx}`} className="p-1.5 border-l border-slate-800/60 font-mono">
                       س{yrIdx + 1}
                     </th>
@@ -216,9 +216,9 @@ export const AnalyticsModule: React.FC<AnalyticsModuleProps> = ({
                     {stu.deaconRank}
                   </td>
 
-                  {/* 16 Stage Cells */}
-                  {[0, 1, 2, 3].map((lIdx) =>
-                    [0, 1, 2, 3].map((yIdx) => {
+                  {/* 8 Stage Cells */}
+                  {ACADEMIC_LEVELS.map((_, lIdx) =>
+                    ACADEMIC_YEARS.map((_, yIdx) => {
                       const historyItem = stu.history?.find(
                         (h) => h.levelIndex === lIdx && h.yearIndex === yIdx
                       );
