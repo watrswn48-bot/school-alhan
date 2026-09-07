@@ -1,16 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import { GraduationCap, UserPlus, CheckCircle2 } from 'lucide-react';
-import { DeaconRank, Student, UserSession } from '../types';
+import { DeaconRank, UserSession } from '../types';
 import { DEACON_RANKS, SCHOOL_LEVELS, SCHOOL_YEARS, getAcademicLevels, getAcademicYears, saveStudent } from '../services/storage';
-import { SmartIDCardModal } from './SmartIDCardModal';
-interface Props { session: UserSession; }
-export const AddStudentModule: React.FC<Props> = ({ session }) => {
+interface Props { session: UserSession; onStudentSaved: (student: ReturnType<typeof saveStudent>) => void; }
+export const AddStudentModule: React.FC<Props> = ({ session, onStudentSaved }) => {
  const levels=useMemo(()=>getAcademicLevels(),[]), years=useMemo(()=>getAcademicYears(),[]);
  const canEdit=session.role==='admin'||!!session.permissions?.canAddEditStudents;
  const makeForm=()=>({fullName:'',photoUrl:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',deaconRank:'إبصالتس' as DeaconRank,level:levels[0]||'المستوى الأول',year:years[0]||'السنة الأولى',levelIndex:0,yearIndex:0,schoolLevel:SCHOOL_LEVELS[0]||'',schoolYear:SCHOOL_YEARS[0]||'',nationalId:'',phone:'',guardianPhone:'',notes:''});
- const [form,setForm]=useState(makeForm),[saved,setSaved]=useState<string|null>(null),[error,setError]=useState(''),[savedStudent,setSavedStudent]=useState<Student|null>(null);
+ const [form,setForm]=useState(makeForm),[saved,setSaved]=useState<string|null>(null),[error,setError]=useState('');
  const set=(k:string,v:string)=>setForm(p=>({...p,[k]:v}));
- const submit=(e:React.FormEvent)=>{e.preventDefault();setError('');setSaved(null);try{const levelIndex=Math.max(0,levels.indexOf(form.level)),yearIndex=Math.max(0,years.indexOf(form.year));const student=saveStudent({...form,levelIndex,yearIndex});setSaved(`تم حفظ بيانات الطالب «${student.fullName}» بنجاح — كود الطالب: ${student.studentCode}`);setSavedStudent(student);setForm(makeForm());}catch(err){setError(err instanceof Error?err.message:'تعذر حفظ الطالب.');}};
+ const submit=(e:React.FormEvent)=>{e.preventDefault();setError('');setSaved(null);try{const levelIndex=Math.max(0,levels.indexOf(form.level)),yearIndex=Math.max(0,years.indexOf(form.year));const student=saveStudent({...form,levelIndex,yearIndex});setSaved(`تم حفظ بيانات الطالب «${student.fullName}» بنجاح — كود الطالب: ${student.studentCode}`);onStudentSaved(student);setForm(makeForm());}catch(err){setError(err instanceof Error?err.message:'تعذر حفظ الطالب.');}};
  if(!canEdit)return <div className="bg-slate-900 border border-slate-800 rounded-3xl p-10 text-center"><GraduationCap className="w-12 h-12 mx-auto text-amber-500 mb-3"/><h2 className="text-lg font-black">إضافة الطلاب</h2><p className="text-xs text-slate-400 mt-2">هذه الوظيفة غير متاحة لحسابك.</p></div>;
  return <div className="space-y-6"><div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl"><h2 className="text-xl font-black text-slate-100 flex items-center gap-2"><GraduationCap className="w-6 h-6 text-amber-400"/>إضافة طالب جديد بالمدرسة</h2><p className="text-xs text-slate-400 mt-1">نموذج إضافة الطالب القديم — كود الطالب يتم إنشاؤه تلقائياً.</p></div>
  {saved&&<div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-2xl p-4 text-sm font-bold flex items-center gap-2"><CheckCircle2 className="w-5 h-5"/>{saved}</div>}{error&&<div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-2xl p-4 text-xs font-bold">{error}</div>}
@@ -29,6 +28,5 @@ export const AddStudentModule: React.FC<Props> = ({ session }) => {
  <div><label className="label">هاتف ولي الأمر (الطوارئ):</label><input value={form.guardianPhone} onChange={e=>set('guardianPhone',e.target.value)} placeholder="01000000000" className="field font-mono"/></div>
  <div className="sm:col-span-2"><label className="label">ملاحظات وقيد الخادم:</label><textarea rows={2} value={form.notes} onChange={e=>set('notes',e.target.value)} className="field resize-none"/></div></div>
  <div className="flex justify-end pt-4 border-t border-slate-800"><button type="submit" className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-md flex items-center gap-2"><UserPlus className="w-4 h-4"/>حفظ البيانات</button></div></form>
- <style>{`.label{display:block;color:#cbd5e1;font-weight:600;margin-bottom:.25rem}.field{width:100%;background:#020617;border:1px solid #1e293b;border-radius:.75rem;padding:.5rem .75rem;color:#f1f5f9;outline:none}.field:focus{border-color:#f59e0b}`}</style>
- <SmartIDCardModal student={savedStudent} isOpen={!!savedStudent} onClose={()=>setSavedStudent(null)}/></div>;
+ <style>{`.label{display:block;color:#cbd5e1;font-weight:600;margin-bottom:.25rem}.field{width:100%;background:#020617;border:1px solid #1e293b;border-radius:.75rem;padding:.5rem .75rem;color:#f1f5f9;outline:none}.field:focus{border-color:#f59e0b}`}</style></div>;
 };
