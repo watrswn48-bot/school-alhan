@@ -10,7 +10,7 @@ interface SmartIDCardModalProps {
   onClose: () => void;
 }
 
-export const SmartIDCardModal: React.FC<SmartIDCardModalProps> = ({ student, isOpen, onClose }) => {
+export const SmartIDCardModal: React.FC<SmartIDCardModalProps> = ({ student, onClose }) => {
   const [qrDataUrl, setQrDataUrl] = useState('');
   const schoolLogo = getSchoolLogo();
 
@@ -21,7 +21,9 @@ export const SmartIDCardModal: React.FC<SmartIDCardModalProps> = ({ student, isO
       .catch(() => setQrDataUrl(''));
   }, [student?.studentCode]);
 
-  if (!isOpen || !student) return null;
+  // The card is intentionally controlled only by the student state.
+  // It stays open indefinitely and can disappear only when onClose() clears it.
+  if (!student) return null;
 
   return <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md p-3 sm:p-6 overflow-y-auto flex items-center justify-center">
     <div className="w-full max-w-xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl p-4 sm:p-6 no-print">
