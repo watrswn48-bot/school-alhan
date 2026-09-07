@@ -1,10 +1,6 @@
-/**
- * Module 6: AUTOMATED SMART ID CARD GENERATION (البطاقات الذكية للطلاب)
- * بطاقة هويّة الشماس عالية الدقة والوضوح بالوجهين الأمامي والخلفي مع طباعة مجهزة
- */
-
-import React from 'react';
-import { Printer, X, QrCode, Shield, Phone, Sparkles } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Printer, X } from 'lucide-react';
+import QRCode from 'qrcode';
 import { Student } from '../types';
 import { getSchoolLogo } from '../services/storage';
 
@@ -14,173 +10,43 @@ interface SmartIDCardModalProps {
   onClose: () => void;
 }
 
-export const SmartIDCardModal: React.FC<SmartIDCardModalProps> = ({
-  student,
-  isOpen,
-  onClose,
-}) => {
-  if (!isOpen || !student) return null;
-
+export const SmartIDCardModal: React.FC<SmartIDCardModalProps> = ({ student, isOpen, onClose }) => {
+  const [qrDataUrl, setQrDataUrl] = useState('');
   const schoolLogo = getSchoolLogo();
 
-  const handlePrint = () => {
-    window.print();
-  };
+  useEffect(() => {
+    if (!student) return;
+    QRCode.toDataURL(student.studentCode, { width: 420, margin: 1, errorCorrectionLevel: 'H' })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(''));
+  }, [student?.studentCode]);
 
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${student.studentCode}`;
+  if (!isOpen || !student) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl no-print">
-        
-        {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl overflow-hidden border border-amber-500/40 bg-slate-950 shadow-md">
-              <img src={schoolLogo} alt="شعار المدرسة" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-100">بطاقة الهوية الذكية المعتمدة</h3>
-              <p className="text-xs text-slate-400">معاينة وطباعة بطاقة الشماس المجهزة للمسح بالكاميرا مع الشعار الرسمي</p>
-            </div>
+  return <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md p-3 sm:p-6 overflow-y-auto flex items-center justify-center">
+    <div className="w-full max-w-xl bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl p-4 sm:p-6 no-print">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-5">
+        <div><h3 className="font-black text-lg">كارنيه الطالب</h3><p className="text-xs text-slate-400">تصميم واضح للطباعة ومسح QR بسهولة</p></div>
+        <div className="flex gap-2"><button onClick={()=>window.print()} className="flex-1 sm:flex-none px-4 py-2 bg-amber-500 text-slate-950 rounded-xl font-black text-xs flex items-center justify-center gap-2"><Printer className="w-4 h-4"/>طباعة</button><button onClick={onClose} className="p-2 bg-slate-800 rounded-xl"><X className="w-5 h-5"/></button></div>
+      </div>
+
+      <div id="printable-id-cards" className="mx-auto w-full max-w-[520px] aspect-[1.585/1] min-h-[320px] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-2 border-amber-500/60 rounded-[28px] overflow-hidden relative shadow-2xl font-['Tajawal'] text-slate-100">
+        <div className="absolute inset-0 opacity-[0.06] flex items-center justify-center pointer-events-none"><img src={schoolLogo} alt="" className="w-[70%] aspect-square object-cover rounded-full"/></div>
+        <div className="relative h-full p-4 sm:p-5 flex flex-col">
+          <div className="flex items-center justify-between gap-3 border-b border-amber-500/30 pb-3">
+            <div className="text-right min-w-0"><div className="text-[14px] sm:text-[17px] leading-tight font-black text-amber-300">مدرسة تي اتشرومبي للألحان</div><div className="text-[10px] sm:text-xs text-slate-300 mt-1">كنيسة العدرا و مارمرقس سكينة</div></div>
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-amber-400 bg-white shrink-0 shadow-lg"><img src={schoolLogo} alt="لوجو مدرسة الشمامسة" className="w-full h-full object-cover"/></div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrint}
-              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-2"
-            >
-              <Printer className="w-4 h-4" />
-              طباعة البطاقة الذكية
-            </button>
-            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-100">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* INTERACTIVE PREVIEW CONTAINER */}
-        <div className="space-y-6 flex flex-col items-center">
-          
-          {/* PRINTABLE ID CARDS CONTAINER (Included in @media print) */}
-          <div id="printable-id-cards" className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-xl">
-            
-            {/* FRONT SIDE (الوجه الأمامي) */}
-            <div className="w-[85.6mm] h-[53.9mm] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-slate-100 rounded-2xl border-2 border-amber-500/50 p-3 shadow-2xl relative overflow-hidden flex flex-col justify-between shrink-0 mx-auto font-['Tajawal']">
-              {/* Background School Logo Watermark */}
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 opacity-15 pointer-events-none rounded-full overflow-hidden">
-                <img src={schoolLogo} alt="" className="w-full h-full object-cover grayscale contrast-125" referrerPolicy="no-referrer" />
-              </div>
-              <div className="absolute right-0 top-0 w-32 h-32 bg-amber-500/10 rounded-full blur-xl pointer-events-none" />
-
-              {/* Header with School Logo */}
-              <div className="flex items-center justify-between border-b border-amber-500/30 pb-1.5 relative z-10">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-amber-400 shadow-lg bg-slate-950 shrink-0 ring-2 ring-amber-400/40 p-0.5">
-                    <img src={schoolLogo} alt="شعار مدرسة الشمامسة" className="w-full h-full object-cover rounded-full" referrerPolicy="no-referrer" />
-                  </div>
-                  <div>
-                    <span className="block text-[11px] font-black tracking-tight text-amber-300">
-                      أكاديمية ومدرسة الشماس
-                    </span>
-                    <span className="block text-[8px] text-slate-300">
-                      كنيسة القديسين — خورس الشمامسة
-                    </span>
-                  </div>
-                </div>
-                <span className="text-[8.5px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/30 shadow-inner">
-                  {student.studentCode}
-                </span>
-              </div>
-
-              {/* Body Content - Removed Rank, Service, and School */}
-              <div className="flex items-center gap-3 py-1 relative z-10">
-                <img
-                  src={student.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
-                  alt={student.fullName}
-                  className="w-16 h-16 rounded-xl object-cover ring-2 ring-amber-500/60 shadow-md border border-amber-500 shrink-0 bg-slate-900"
-                />
-
-                <div className="space-y-1 text-right flex-1 min-w-0">
-                  <span className="block font-black text-sm text-slate-100 truncate leading-tight">
-                    {student.fullName}
-                  </span>
-
-                  {/* Certified Membership Tag featuring School Logo */}
-                  <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-500/15 border border-amber-500/30 rounded-lg w-fit shadow-xs">
-                    <img src={schoolLogo} alt="" className="w-3.5 h-3.5 rounded-full object-cover shrink-0 border border-amber-400/50" referrerPolicy="no-referrer" />
-                    <span className="text-[9px] font-black text-amber-300">بطاقة عضوية معتمدة</span>
-                  </div>
-
-                  <span className="block text-[8px] text-slate-400 font-mono">
-                    الكود الشخصي: {student.studentCode}
-                  </span>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="pt-1 border-t border-slate-800 flex items-center justify-between text-[7px] text-slate-400 font-mono relative z-10">
-                <span>تاريخ الإصدار: 2026/2027</span>
-                <span className="text-amber-400 font-bold flex items-center gap-1">
-                  <span>ختم الأكاديمية الرسمي</span>
-                  <Sparkles className="w-2.5 h-2.5" />
-                </span>
-              </div>
+          <div className="flex-1 grid grid-cols-[1fr_112px] sm:grid-cols-[1fr_142px] gap-3 sm:gap-5 items-center py-3 min-h-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <img src={student.photoUrl} alt={student.fullName} className="w-24 h-28 sm:w-32 sm:h-36 object-cover rounded-2xl border-2 border-amber-500/70 shadow-xl shrink-0 bg-slate-800"/>
+              <div className="min-w-0 text-right"><div className="text-[10px] text-slate-400 mb-1">اسم الطالب</div><div className="font-black text-sm sm:text-lg leading-snug break-words">{student.fullName}</div><div className="mt-3 text-[10px] text-slate-400">رقم ولي الأمر</div><div className="font-mono font-black text-xs sm:text-sm text-amber-300 break-all">{student.guardianPhone || 'غير مسجل'}</div></div>
             </div>
-
-            {/* BACK SIDE (الوجه الخلفي) */}
-            <div className="w-[85.6mm] h-[53.9mm] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 rounded-2xl border-2 border-amber-500/50 p-3 shadow-2xl relative overflow-hidden flex flex-col justify-between shrink-0 mx-auto font-['Tajawal']">
-              {/* Background School Logo Watermark */}
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 opacity-15 pointer-events-none rounded-full overflow-hidden">
-                <img src={schoolLogo} alt="" className="w-full h-full object-cover grayscale contrast-125" referrerPolicy="no-referrer" />
-              </div>
-
-              {/* Header with School Logo and Title */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-1 relative z-10">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-6 h-6 rounded-full overflow-hidden border border-amber-400 shadow-sm shrink-0">
-                    <img src={schoolLogo} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                  </div>
-                  <span className="text-[9.5px] font-black text-amber-400">
-                    بطاقة التحقق للقداسات والمحاضرات
-                  </span>
-                </div>
-                <span className="text-[8px] text-slate-400 font-mono">{student.studentCode}</span>
-              </div>
-
-              {/* High Contrast QR Code & Security Info */}
-              <div className="flex items-center justify-between gap-3 py-1">
-                <div className="p-1.5 bg-white rounded-xl shadow-md border border-amber-500/40 shrink-0">
-                  <img src={qrCodeUrl} alt="Student QR Code" className="w-16 h-16" />
-                </div>
-
-                <div className="space-y-1.5 text-right text-[8px] text-slate-300 flex-1">
-                  <div className="space-y-0.5 bg-slate-900/80 p-1.5 rounded-lg border border-slate-800">
-                    <span className="block text-[7.5px] text-slate-400">الرقم القومي للشماس:</span>
-                    <span className="font-mono text-amber-300 font-black text-[9px]">{student.nationalId || 'غير مسجل'}</span>
-                  </div>
-                  {student.guardianPhone && (
-                    <div className="space-y-0.5 bg-slate-900/80 p-1.5 rounded-lg border border-slate-800">
-                      <span className="block text-[7.5px] text-slate-400">طوارئ ولي الأمر:</span>
-                      <span className="font-mono text-slate-200 font-bold">{student.guardianPhone}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Stamp & Footer */}
-              <div className="pt-1 border-t border-slate-800 flex items-center justify-between text-[7px] text-slate-400">
-                <div className="flex items-center gap-1">
-                  <img src={schoolLogo} alt="" className="w-3.5 h-3.5 rounded-full object-cover border border-amber-400/40" referrerPolicy="no-referrer" />
-                  <span>ختم واعتماد إدارة مدرسة الشمامسة ✍️</span>
-                </div>
-                <span className="text-amber-400 font-bold">مسح الكاميرا فوري</span>
-              </div>
-            </div>
-
+            <div className="bg-white rounded-2xl p-2 sm:p-2.5 shadow-xl border-2 border-amber-400 flex items-center justify-center aspect-square">{qrDataUrl ? <img src={qrDataUrl} alt="QR Code" className="w-full h-full object-contain"/> : <div className="text-slate-500 text-xs">QR</div>}</div>
           </div>
         </div>
       </div>
     </div>
-  );
+  </div>;
 };
