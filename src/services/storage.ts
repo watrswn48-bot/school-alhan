@@ -352,7 +352,30 @@ export function applyCloudDataToLocal(cloudData: any, onDataUpdated?: () => void
 }
 
 // Initializer
+export function migratePriestName() {
+  const raw = localStorage.getItem(STORAGE_KEYS.SERVANTS);
+  if (!raw) return;
+  try {
+    const servants: Servant[] = JSON.parse(raw);
+    let changed = false;
+    servants.forEach((servant) => {
+      if (servant.id === 'srv-admin-01' && servant.fullName !== 'أبونا فيلبس ميلاد') {
+        servant.fullName = 'أبونا فيلبس ميلاد';
+        changed = true;
+      }
+    });
+    if (changed) {
+      localStorage.setItem(STORAGE_KEYS.SERVANTS, JSON.stringify(servants));
+      const admin = servants.find((servant) => servant.id === 'srv-admin-01');
+      if (admin) enqueueMutation('save_servant', admin);
+    }
+  } catch {
+    // Ignore malformed legacy servant data.
+  }
+}
+
 export async function initStorage(onDataUpdated?: () => void) {
+  migratePriestName();
   // Check if students exist locally, if not seed initial dataset
   const existingStudents = localStorage.getItem(STORAGE_KEYS.STUDENTS);
   if (!existingStudents) {
@@ -434,7 +457,7 @@ function seedInitialData() {
   const initialServants: Servant[] = [
     {
       id: 'srv-admin-01',
-      fullName: 'القمص يوحنا عبد المسيح',
+      fullName: 'أبونا فيلبس ميلاد',
       phone: '01223344556',
       secretCode: '123456',
       qrCode: 'SRV-ADMIN-01',
@@ -512,7 +535,7 @@ function seedInitialData() {
       timeStr: '06:00 PM',
       status: 'active',
       createdAt: new Date().toISOString(),
-      createdBy: 'القمص يوحنا عبد المسيح',
+      createdBy: 'أبونا فيلبس ميلاد',
     },
     {
       id: 'lec-02',
@@ -523,7 +546,7 @@ function seedInitialData() {
       timeStr: '07:30 PM',
       status: 'active',
       createdAt: new Date().toISOString(),
-      createdBy: 'القمص يوحنا عبد المسيح',
+      createdBy: 'أبونا فيلبس ميلاد',
     },
   ];
 
@@ -539,7 +562,7 @@ function seedInitialData() {
       dateStr: todayStr,
       timeStr: '06:42:15 AM',
       recordedBy: 'srv-admin-01',
-      recordedByName: 'القمص يوحنا عبد المسيح',
+      recordedByName: 'أبونا فيلبس ميلاد',
     },
     {
       id: 'lit-02',
@@ -551,7 +574,7 @@ function seedInitialData() {
       dateStr: todayStr,
       timeStr: '06:50:04 AM',
       recordedBy: 'srv-admin-01',
-      recordedByName: 'القمص يوحنا عبد المسيح',
+      recordedByName: 'أبونا فيلبس ميلاد',
     },
   ];
 
@@ -567,7 +590,7 @@ function seedInitialData() {
         score: Math.floor(82 + Math.random() * 18),
         maxScore: 100,
         isApproved: true,
-        updatedBy: 'القمص يوحنا عبد المسيح',
+        updatedBy: 'أبونا فيلبس ميلاد',
         updatedAt: new Date().toISOString(),
       });
     });
@@ -1269,7 +1292,7 @@ export const INITIAL_CURRICULA: CurriculumMaterial[] = [
     fileName: 'coptic_alphabet_and_pronunciation.pdf',
     fileSize: '1.8 MB',
     contentNotes: 'شرح كامل لـ 32 حرفاً قبطياً مع الحركات والقواعد الصوتية، وقواعد نطق حرف الغنغما (Gamma)، والبي والفي والرو والشاي والخاي.',
-    uploadedBy: 'القمص يوحنا عبد المسيح',
+    uploadedBy: 'أبونا فيلبس ميلاد',
     uploadedById: 'srv-admin-01',
     createdAt: new Date().toISOString(),
   },
@@ -1284,7 +1307,7 @@ export const INITIAL_CURRICULA: CurriculumMaterial[] = [
     fileSize: '3.4 MB',
     fileUrl: 'https://ia800301.us.archive.org/15/items/CopticHymnsDeacon/TentenOuosht.mp3',
     contentNotes: 'تين أوأوشت إمفيوت نيم إبشيري : نيم بي إبنيفما إثؤواب : تي اترياس إتجوم إن أوموسيوس.\n\nالمعنى: نسجد للآب والابن والروح القدس، الثالوث الكامل المتساوي في الجوهر.',
-    uploadedBy: 'القمص يوحنا عبد المسيح',
+    uploadedBy: 'أبونا فيلبس ميلاد',
     uploadedById: 'srv-admin-01',
     createdAt: new Date().toISOString(),
   },
@@ -1312,7 +1335,7 @@ export const INITIAL_CURRICULA: CurriculumMaterial[] = [
     fileSize: '2.9 MB',
     fileUrl: 'https://ia800301.us.archive.org/15/items/CopticHymnsDeacon/AmenTonThanaton.mp3',
     contentNotes: 'آمين آمين آمين بموتك يارب نبشر وبقيامتك المقدسة وصعودك إلى السموات نعترف : نسبحك نباركك نشكرك يارب ونتضرع إليك يا إلهنا.',
-    uploadedBy: 'القمص يوحنا عبد المسيح',
+    uploadedBy: 'أبونا فيلبس ميلاد',
     uploadedById: 'srv-admin-01',
     createdAt: new Date().toISOString(),
   },
@@ -1326,7 +1349,7 @@ export const INITIAL_CURRICULA: CurriculumMaterial[] = [
     fileName: 'creed_and_councils_study.docx',
     fileSize: '950 KB',
     contentNotes: 'دراسة مبسطة في بنود الإيمان الأرثوذكسي، مجمع نيقية 325م، مجمع القسطنطينية 381م، ومجمع أفسس 431م، ومصطلحات هوموؤوسيوس وطبيعة السيد المسيح الواحدة المتجسدة.',
-    uploadedBy: 'القمص يوحنا عبد المسيح',
+    uploadedBy: 'أبونا فيلبس ميلاد',
     uploadedById: 'srv-admin-01',
     createdAt: new Date().toISOString(),
   },
