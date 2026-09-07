@@ -3,17 +3,18 @@ import fs from 'node:fs';
 const path = 'src/components/CumulativeProfileModal.tsx';
 let source = fs.readFileSync(path, 'utf8');
 
-const anchor = `                <span className="flex items-center gap-1 font-mono">\n                  <Phone className="w-3.5 h-3.5 text-sky-400" />\n                  ولي الأمر: {student.guardianPhone || 'غير مسجل'}\n                </span>`;
+const marker = 'الرقم القومي: {student.nationalId || \'غير مسجل\'}';
+const addition = `                <span className="flex items-center gap-1 font-mono">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  ${marker}
+                </span>`;
 
-const addition = `${anchor}\n                <span className="flex items-center gap-1 font-mono">\n                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />\n                  الرقم القومي: {student.nationalId || 'غير مسجل'}\n                </span>`;
-
-if (!source.includes('الرقم القومي: {student.nationalId')) {
-  if (!source.includes(anchor)) {
-    throw new Error('Student profile header anchor not found.');
-  }
-  source = source.replace(anchor, addition);
-  fs.writeFileSync(path, source);
-  console.log('Student national ID added to the cumulative profile header.');
-} else {
+if (source.includes(marker)) {
   console.log('Student national ID is already present in the cumulative profile header.');
+} else {
+  const guardianRegex = /(\s*<span className="flex items-center gap-1 font-mono">\s*<Phone className="w-3\.5 h-3\.5 text-sky-400" \/>\s*ولي الأمر: \{student\.guardianPhone \|\| 'غير مسجل'\}\s*<\/span>)/;
+  if (!guardianRegex.test(source)) throw new Error('Guardian phone block not found in student profile.');
+  source = source.replace(guardianRegex, `$1\n${addition}`);
+  fs.writeFileSync(path, source, 'utf8');
+  console.log('Student national ID added beside the guardian phone in the cumulative profile.');
 }
