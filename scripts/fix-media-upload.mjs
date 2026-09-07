@@ -16,10 +16,12 @@ patchFile('index.html', s => s.replace(
 ));
 
 patchFile('src/components/CurriculaModule.tsx', s => {
-  s = s.replace(
-    "import { sessionHasPermission } from '../services/permissions';",
-    "import { sessionHasPermission } from '../services/permissions';\nimport { uploadCurriculumFile } from '../services/mediaStorage';"
-  );
+  if (!s.includes("import { uploadCurriculumFile } from '../services/mediaStorage';")) {
+    s = s.replace(
+      "import { sessionHasPermission } from '../services/permissions';",
+      "import { sessionHasPermission } from '../services/permissions';\nimport { uploadCurriculumFile } from '../services/mediaStorage';"
+    );
+  }
   s = s.replace(
     "const [formTitle,setFormTitle]=useState(''); const [formSubject,setFormSubject]=useState('الألحان والتسبيحة');",
     "const [formTitle,setFormTitle]=useState(''); const [selectedFile,setSelectedFile]=useState<File|null>(null); const [formSubject,setFormSubject]=useState('الألحان والتسبيحة');"
