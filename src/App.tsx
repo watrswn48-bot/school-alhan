@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Church, BookOpen, BarChart3, Sliders, UserCheck, GraduationCap, LockKeyhole, BookPlus, BellRing } from 'lucide-react';
+import { Users, Church, BookOpen, BarChart3, Sliders, UserCheck, GraduationCap, LockKeyhole, BookPlus, BellRing, UserPlus } from 'lucide-react';
 import { UserSession, Student } from './types';
 import { initStorage, getStudents, getSchoolLogo, getServants, getLectures } from './services/storage';
 import { normalizeRole, normalizeServantPermissions, sessionHasPermission } from './services/permissions';
@@ -7,6 +7,7 @@ import { lecturesNeedingEvaluation, runAutomaticAcademicTransition } from './ser
 import { Navbar } from './components/Navbar';
 import { LoginModule } from './components/LoginModule';
 import { ClassesAndStudentsModule } from './components/ClassesAndStudentsModule';
+import { AddStudentModule } from './components/AddStudentModule';
 import { FridayLiturgyModule } from './components/FridayLiturgyModule';
 import { LectureSystemModule } from './components/LectureSystemModule';
 import { AnalyticsModule } from './components/AnalyticsModule';
@@ -20,7 +21,7 @@ import { SiteFooter } from './components/SiteFooter';
 
 const SchoolBackgroundWatermark: React.FC<{ logo: string }> = ({ logo }) => <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center select-none"><div className="w-[500px] h-[500px] sm:w-[700px] sm:h-[700px] lg:w-[850px] lg:h-[850px] max-w-[90vw] max-h-[90vh] rounded-full overflow-hidden opacity-10 border-4 border-amber-400/20 shadow-2xl transition-all duration-700"><img src={logo} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" /></div><div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.06)_0%,rgba(15,23,42,0)_70%)]" /></div>;
 
-type NavTab = 'class1'|'class2'|'class3'|'class4'|'class5'|'class6'|'class7'|'admin';
+type NavTab = 'class1'|'class2'|'class3'|'class4'|'class5'|'class6'|'class7'|'class8'|'admin';
 
 export default function App() {
   const [dataVersion,setDataVersion]=useState(0);
@@ -32,20 +33,10 @@ export default function App() {
   const [selectedStudentForIDCard,setSelectedStudentForIDCard]=useState<Student|null>(null);
 
   useEffect(()=>{const f=()=>setSchoolLogo(getSchoolLogo());window.addEventListener('school_logo_updated',f);return()=>window.removeEventListener('school_logo_updated',f);},[]);
-  useEffect(()=>{
-    initStorage(()=>setDataVersion(v=>v+1)).then(async()=>{
-      try { const r=await runAutomaticAcademicTransition(); if(r.processed) setDataVersion(v=>v+1); } catch(e) { console.warn('Academic transition:',e); }
-    });
-  },[]);
+  useEffect(()=>{initStorage(()=>setDataVersion(v=>v+1)).then(async()=>{try{const r=await runAutomaticAcademicTransition();if(r.processed)setDataVersion(v=>v+1);}catch(e){console.warn('Academic transition:',e);}});},[]);
   useEffect(()=>{localStorage.setItem('deacon_system_session_v1',JSON.stringify(session));},[session]);
 
-  const normalizeSession=(incoming:UserSession):UserSession=>{
-    if(incoming.mode!=='servant'||!incoming.userId)return incoming;
-    const srv=getServants().find(s=>s.id===incoming.userId);
-    const role=normalizeRole(srv?.role||incoming.role||(incoming.userId==='srv-admin-01'?'admin':'junior_servant'));
-    return{...incoming,role,fullName:srv?.fullName||incoming.fullName,permissions:normalizeServantPermissions(role,srv?.permissions||incoming.permissions)};
-  };
-
+  const normalizeSession=(incoming:UserSession):UserSession=>{if(incoming.mode!=='servant'||!incoming.userId)return incoming;const srv=getServants().find(s=>s.id===incoming.userId);const role=normalizeRole(srv?.role||incoming.role||(incoming.userId==='srv-admin-01'?'admin':'junior_servant'));return{...incoming,role,fullName:srv?.fullName||incoming.fullName,permissions:normalizeServantPermissions(role,srv?.permissions||incoming.permissions)};};
   const handleLoginSuccess=(s:UserSession)=>{const n=normalizeSession(s);setSession(n);if(n.mode==='student'){const st=getStudents().find(x=>x.id===n.userId||x.studentCode===n.studentCode);if(st)setSelectedStudentForProfile(st);}};
   const handleLogout=()=>{setSession({isLoggedIn:false,mode:'servant'});localStorage.removeItem('deacon_system_session_v1');setSelectedStudentForProfile(null);setActiveNavTab('class1');};
 
@@ -64,14 +55,13 @@ export default function App() {
   const canSubjects=isAdministrator||sessionHasPermission(session,'canManageSubjects');
   const canLectures=isAdministrator||sessionHasPermission(session,'canManageLectures')||sessionHasPermission(session,'canEvaluateLectures');
   const lectureNotifications=canLectures?lecturesNeedingEvaluation(getLectures(),session.userId,isAdministrator):[];
-
   const Guard:React.FC<{allowed:boolean;children:React.ReactNode}>=({allowed,children})=>allowed?<>{children}</>:<div className="bg-slate-900 border border-slate-800 rounded-3xl p-10 text-center space-y-3"><LockKeyhole className="w-12 h-12 mx-auto text-amber-500"/><h3 className="text-lg font-bold">هذه الوظيفة غير متاحة لحسابك</h3><p className="text-xs text-slate-400">يمكن لأبونا فتح هذه الصلاحية من إدارة الخدام.</p></div>;
   const nav=(tab:NavTab,icon:React.ReactNode,label:string,allowed=true)=><button onClick={()=>allowed&&setActiveNavTab(tab)} disabled={!allowed} className={`px-4 py-3 rounded-2xl text-xs font-bold transition-all flex items-center gap-2.5 shrink-0 ${activeNavTab===tab?'bg-amber-500 text-slate-950 shadow-lg':'text-slate-400 hover:text-slate-100 hover:bg-slate-900'} ${!allowed?'opacity-40 cursor-not-allowed':''}`}>{icon}<span>{label}</span></button>;
 
   return <div className="min-h-screen bg-slate-900 text-slate-100 font-['Tajawal'] pb-16 selection:bg-amber-500 selection:text-slate-950 relative overflow-x-hidden"><SchoolBackgroundWatermark logo={schoolLogo}/><div className="relative z-10"><Navbar session={session} onLogout={handleLogout} onRefreshData={()=>setDataVersion(v=>v+1)}/><main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5">
     {lectureNotifications.length>0&&<button onClick={()=>setActiveNavTab('class3')} className="w-full text-right bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/40 rounded-2xl p-4 flex items-start gap-3"><BellRing className="w-5 h-5 text-amber-400 shrink-0"/><div><div className="font-black text-amber-300">لديك {lectureNotifications.length} محاضرة تحتاج تقييم الطلاب</div><div className="text-xs text-slate-300 mt-1">اضغط لفتح المحاضرات وتقييم الطلاب الذين حضروا محاضرتك.</div></div></button>}
-    <div className="bg-slate-950/90 border border-slate-800 p-2 rounded-3xl shadow-xl overflow-x-auto"><div className="flex items-center gap-1.5 min-w-max">{nav('class1',<Users className="w-4 h-4"/>,'الفصول والطلاب',canStudents)}{nav('class2',<Church className="w-4 h-4"/>,'حضور القداس',true)}{nav('class3',<BookOpen className="w-4 h-4"/>,'المحاضرات',canLectures)}{nav('class4',<BarChart3 className="w-4 h-4"/>,'الإحصائيات',canAnalytics)}{nav('class5',<BookOpen className="w-4 h-4"/>,'المناهج',canCurricula)}{nav('class6',<GraduationCap className="w-4 h-4"/>,'النتائج',canGrades)}{nav('class7',<BookPlus className="w-4 h-4"/>,'إضافة المواد',canSubjects)}{isAdministrator&&nav('admin',<Sliders className="w-4 h-4"/>,'لوحة الإدارة',true)}</div></div>
-    <div key={dataVersion} className="min-h-[70vh]">{activeNavTab==='class1'&&<Guard allowed={canStudents}><ClassesAndStudentsModule session={session} onSelectStudentProfile={s=>setSelectedStudentForProfile(s)} onGenerateIDCard={s=>setSelectedStudentForIDCard(s)}/></Guard>}{activeNavTab==='class2'&&<FridayLiturgyModule session={session}/>} {activeNavTab==='class3'&&<LectureSystemModule session={session}/>} {activeNavTab==='class4'&&<Guard allowed={canAnalytics}><AnalyticsModule session={session} onSelectStudentProfile={s=>setSelectedStudentForProfile(s)}/></Guard>} {activeNavTab==='class5'&&<Guard allowed={canCurricula}><CurriculaModule session={session}/></Guard>} {activeNavTab==='class6'&&<Guard allowed={canGrades}><ResultsEntryModule session={session}/></Guard>} {activeNavTab==='class7'&&<Guard allowed={canSubjects}><SubjectsManagementModule session={session}/></Guard>} {activeNavTab==='admin'&&isAdministrator&&<AdminPanelModule session={session}/>}</div>
+    <div className="bg-slate-950/90 border border-slate-800 p-2 rounded-3xl shadow-xl overflow-x-auto"><div className="flex items-center gap-1.5 min-w-max">{nav('class1',<Users className="w-4 h-4"/>,'الفصول والطلاب',canStudents)}{nav('class8',<UserPlus className="w-4 h-4"/>,'إضافة الطلاب',canStudents)}{nav('class2',<Church className="w-4 h-4"/>,'حضور القداس',true)}{nav('class3',<BookOpen className="w-4 h-4"/>,'المحاضرات',canLectures)}{nav('class4',<BarChart3 className="w-4 h-4"/>,'الإحصائيات',canAnalytics)}{nav('class5',<BookOpen className="w-4 h-4"/>,'المناهج',canCurricula)}{nav('class6',<GraduationCap className="w-4 h-4"/>,'النتائج',canGrades)}{nav('class7',<BookPlus className="w-4 h-4"/>,'إضافة المواد',canSubjects)}{isAdministrator&&nav('admin',<Sliders className="w-4 h-4"/>,'لوحة الإدارة',true)}</div></div>
+    <div key={dataVersion} className="min-h-[70vh]">{activeNavTab==='class1'&&<Guard allowed={canStudents}><ClassesAndStudentsModule session={session} onSelectStudentProfile={s=>setSelectedStudentForProfile(s)} onGenerateIDCard={s=>setSelectedStudentForIDCard(s)}/></Guard>}{activeNavTab==='class8'&&<Guard allowed={canStudents}><AddStudentModule session={session}/></Guard>}{activeNavTab==='class2'&&<FridayLiturgyModule session={session}/>} {activeNavTab==='class3'&&<LectureSystemModule session={session}/>} {activeNavTab==='class4'&&<Guard allowed={canAnalytics}><AnalyticsModule session={session} onSelectStudentProfile={s=>setSelectedStudentForProfile(s)}/></Guard>} {activeNavTab==='class5'&&<Guard allowed={canCurricula}><CurriculaModule session={session}/></Guard>} {activeNavTab==='class6'&&<Guard allowed={canGrades}><ResultsEntryModule session={session}/></Guard>} {activeNavTab==='class7'&&<Guard allowed={canSubjects}><SubjectsManagementModule session={session}/></Guard>} {activeNavTab==='admin'&&isAdministrator&&<AdminPanelModule session={session}/>}</div>
     {selectedStudentForProfile&&<CumulativeProfileModal student={selectedStudentForProfile} isOpen={!!selectedStudentForProfile} onClose={()=>setSelectedStudentForProfile(null)} session={session} onGenerateIDCard={s=>setSelectedStudentForIDCard(s)}/>}<SmartIDCardModal student={selectedStudentForIDCard} isOpen={!!selectedStudentForIDCard} onClose={()=>setSelectedStudentForIDCard(null)}/>
   </main><SiteFooter /></div></div>;
 }
