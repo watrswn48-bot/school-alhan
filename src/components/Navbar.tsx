@@ -4,10 +4,15 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { UserCheck, LogOut, Shield } from 'lucide-react';
+import { UserCheck, LogOut, Shield, Download } from 'lucide-react';
 import { UserSession } from '../types';
 import { getSchoolLogo } from '../services/storage';
 import { OfflineSyncIndicator } from './OfflineSyncIndicator';
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+};
 
 interface NavbarProps {
   session: UserSession;
@@ -17,12 +22,45 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ session, onLogout, onRefreshData }) => {
   const [schoolLogo, setSchoolLogo] = useState<string>(() => getSchoolLogo());
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     const handleLogoUpdate = () => setSchoolLogo(getSchoolLogo());
     window.addEventListener('school_logo_updated', handleLogoUpdate);
     return () => window.removeEventListener('school_logo_updated', handleLogoUpdate);
   }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const updateInstalled = () => setIsInstalled(mediaQuery.matches || (window.navigator as Navigator & { standalone?: boolean }).standalone === true);
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+    };
+
+    updateInstalled();
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    mediaQuery.addEventListener?.('change', updateInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      mediaQuery.removeEventListener?.('change', updateInstalled);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-xl">
@@ -46,6 +84,13 @@ export const Navbar: React.FC<NavbarProps> = ({ session, onLogout, onRefreshData
 
           <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto min-w-0">
             <div className="shrink-0"><OfflineSyncIndicator onRefreshData={onRefreshData} /></div>
+
+            {!isInstalled && installPrompt && (
+              <button onClick={handleInstall} className="shrink-0 min-h-[42px] px-3 sm:px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 rounded-xl sm:rounded-2xl text-xs font-black transition-colors cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap" title="تثبيت المدرسة كتطبيق على الجهاز" aria-label="تثبيت التطبيق">
+                <Download className="w-4 h-4" />
+                <span>تثبيت التطبيق</span>
+              </button>
+            )}
 
             <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 px-2.5 sm:px-3 py-1.5 rounded-2xl min-w-0 max-w-[48vw] sm:max-w-none">
               <div className="p-1 bg-amber-500/20 text-amber-400 rounded-xl shrink-0">
