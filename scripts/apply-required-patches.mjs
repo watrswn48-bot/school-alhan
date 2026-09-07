@@ -89,6 +89,14 @@ patchFile('src/components/AdminPanelModule.tsx', (s) => {
 `<select value={newServantData.role||'servant'} onChange={e=>handleRoleChange(e.target.value as ServantRole)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"><option value="admin">أبونا / مسؤول النظام — كل الصلاحيات</option><option value="family_admin">أمين الأسرة — حضور + ملفات + تقييمات</option><option value="servant">خادم — حضور فقط افتراضياً</option></select>`,
 `<select value={newServantData.role||'junior_servant'} onChange={e=>handleRoleChange(e.target.value as ServantRole)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"><option value="admin">أبونا — كل الصلاحيات</option><option value="family_admin">أمين الأسرة — حضور + ملفات + تقييمات</option><option value="senior_servant">خادم كبير — حضور + إلقاء محاضرات وتقييم محاضراته</option><option value="junior_servant">خادم صغير — حضور فقط افتراضياً</option></select>`);
   s = s.replace('md:grid-cols-3 gap-3', 'md:grid-cols-4 gap-3');
+  s = s.replace(
+`        <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5"><b className="text-amber-400">أبونا / مسؤول النظام</b><p className="text-[11px] text-slate-400 mt-1">كل الصلاحيات، وإدارة الخدام والصلاحيات.</p></div>
+        <div className="p-4 rounded-2xl border border-sky-500/30 bg-sky-500/5"><b className="text-sky-400">أمين الأسرة</b><p className="text-[11px] text-slate-400 mt-1">الحضور والغياب + رفع الملفات + تقييم المحاضرات افتراضياً.</p></div>
+        <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5"><b className="text-emerald-400">خادم</b><p className="text-[11px] text-slate-400 mt-1">الحضور والغياب فقط افتراضياً، ويمكن فتح أي صلاحية إضافية.</p></div>`,
+`        <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5"><b className="text-amber-400">أبونا</b><p className="text-[11px] text-slate-400 mt-1">كل الصلاحيات وإدارة الخدام والبيانات والإعدادات والتقييمات.</p></div>
+        <div className="p-4 rounded-2xl border border-sky-500/30 bg-sky-500/5"><b className="text-sky-400">أمين الأسرة</b><p className="text-[11px] text-slate-400 mt-1">الحضور والغياب + رفع الملفات + تقييم المحاضرات افتراضياً.</p></div>
+        <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5"><b className="text-emerald-400">خادم كبير</b><p className="text-[11px] text-slate-400 mt-1">الحضور + يمكن اختياره كمحاضر + تقييم الطلاب في محاضراته.</p></div>
+        <div className="p-4 rounded-2xl border border-violet-500/30 bg-violet-500/5"><b className="text-violet-400">خادم صغير</b><p className="text-[11px] text-slate-400 mt-1">الحضور والغياب فقط افتراضياً، وأبونا يضيف له أي صلاحية أخرى.</p></div>`);
   return s;
 });
 
