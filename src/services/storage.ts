@@ -378,6 +378,7 @@ export async function initStorage(onDataUpdated?: () => void) {
   migratePriestName();
   migratePriestName();
   migratePriestName();
+  migratePriestName();
   // Check if students exist locally, if not seed initial dataset
   const existingStudents = localStorage.getItem(STORAGE_KEYS.STUDENTS);
   if (!existingStudents) {
