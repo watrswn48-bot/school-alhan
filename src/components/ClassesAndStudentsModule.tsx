@@ -169,10 +169,14 @@ export const ClassesAndStudentsModule: React.FC<ClassesAndStudentsProps> = ({
     e.preventDefault();
     if (!editingStudent?.fullName) return;
 
-    saveStudent(editingStudent);
-    setIsAddEditModalOpen(false);
-    setEditingStudent(null);
-    refreshData();
+    try {
+      saveStudent(editingStudent);
+      setIsAddEditModalOpen(false);
+      setEditingStudent(null);
+      refreshData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'تعذر حفظ الطالب. تأكد أن كود الطالب غير مستخدم.');
+    }
   };
 
   const handleSoftDelete = (id: string) => {

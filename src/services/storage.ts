@@ -92,13 +92,10 @@ export const SCHOOL_YEARS: string[] = [
 ];
 
 export const DEACON_RANKS: DeaconRank[] = [
-  'لم يشرس',
+  'بدون رتبة',
   'إبصالتس',
   'أغنسطس',
-  'عريف',
   'إبذياكون',
-  'دياكون',
-  'أرشيدياكون',
 ];
 
 export const DEFAULT_SUBJECTS: string[] = [
@@ -624,6 +621,13 @@ export function getDeletedStudents(): Student[] {
 
 export function saveStudent(studentData: Partial<Student>): Student {
   const list = getStudents(true);
+  const requestedCode = (studentData.studentCode || '').trim();
+  if (requestedCode) {
+    const duplicate = list.find((st) => st.id !== studentData.id && st.studentCode.trim().toLowerCase() === requestedCode.toLowerCase());
+    if (duplicate) {
+      throw new Error(`كود الطالب مستخدم بالفعل لطالب آخر: ${duplicate.fullName}`);
+    }
+  }
   let existingIndex = -1;
   if (studentData.id) {
     existingIndex = list.findIndex((s) => s.id === studentData.id);
@@ -651,7 +655,7 @@ export function saveStudent(studentData: Partial<Student>): Student {
       nationalId: studentData.nationalId || `3020101${Date.now().toString().slice(-7)}`,
       fullName: studentData.fullName || 'طالب جديد',
       photoUrl: studentData.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      deaconRank: studentData.deaconRank || 'لم يشرس',
+      deaconRank: studentData.deaconRank || 'بدون رتبة',
       ordinationDate: studentData.ordinationDate || new Date().toISOString().split('T')[0],
       level: studentData.level || ACADEMIC_LEVELS[levelIdx],
       year: studentData.year || ACADEMIC_YEARS[yearIdx],
@@ -781,6 +785,7 @@ export function saveLecture(lec: Partial<Lecture>): Lecture {
     id: lec.id || `lec-${Date.now()}`,
     title: lec.title || 'محاضرة طقس وألحان',
     speaker: lec.speaker || 'أحد الخدام',
+    speakerServantId: lec.speakerServantId,
     levelName: lec.levelName || ACADEMIC_LEVELS[0],
     yearName: lec.yearName,
     dateStr: lec.dateStr || new Date().toISOString().split('T')[0],
@@ -1004,12 +1009,9 @@ export function saveServant(servant: Partial<Servant>): Servant {
       phone: servant.phone || '',
       secretCode: servant.secretCode || String(Math.floor(100000 + Math.random() * 900000)),
       qrCode: servant.qrCode || `SRV-${Date.now().toString().slice(-4)}`,
-      role: servant.role || 'servant',
+      role: servant.role || 'junior_servant',
       permissions: servant.permissions || {
-        canAddEditStudents: true,
-        canSetRatings: true,
-        canWriteNotes: true,
-        canViewAnalytics: true,
+        canRecordAttendance: true,
       },
       isActive: true,
       createdAt: new Date().toISOString(),
@@ -1073,6 +1075,7 @@ export function saveSubjectResult(res: Partial<AcademicSubjectResult>): Academic
         r.levelIndex === res.levelIndex &&
         r.yearIndex === res.yearIndex &&
         r.subjectName === res.subjectName &&
+        r.term === (res.term || 'سنوي') &&
         (!res.examType || r.examType === res.examType)
     );
   }
