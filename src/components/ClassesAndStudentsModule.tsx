@@ -140,26 +140,6 @@ export const ClassesAndStudentsModule: React.FC<ClassesAndStudentsProps> = ({
     link.click();
     document.body.removeChild(link);
   };
-
-  const handleOpenAdd = () => {
-    setEditingStudent({
-      fullName: '',
-      photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      deaconRank: 'إبصالتس',
-      level: selectedLevel !== 'ALL' ? (selectedLevel as AcademicLevel) : ((academicLevels[0] || 'عام') as AcademicLevel),
-      year: selectedYear !== 'ALL' ? (selectedYear as AcademicYear) : ((academicYears[0] || 'عام') as AcademicYear),
-      levelIndex: selectedLevel !== 'ALL' ? academicLevels.indexOf(selectedLevel) : 0,
-      yearIndex: selectedYear !== 'ALL' ? academicYears.indexOf(selectedYear) : 0,
-      schoolLevel: SCHOOL_LEVELS[0],
-      schoolYear: SCHOOL_YEARS[0],
-      nationalId: '',
-      phone: '',
-      guardianPhone: '',
-      notes: '',
-    });
-    setIsAddEditModalOpen(true);
-  };
-
   const handleOpenEdit = (stu: Student) => {
     setEditingStudent({ ...stu });
     setIsAddEditModalOpen(true);
@@ -300,17 +280,6 @@ export const ClassesAndStudentsModule: React.FC<ClassesAndStudentsProps> = ({
               </span>
             )}
           </button>
-
-          {/* Add Student Button */}
-          {canEdit && (
-            <button
-              onClick={handleOpenAdd}
-              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-2xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2"
-            >
-              <UserPlus className="w-4 h-4" />
-              إضافة طالب
-            </button>
-          )}
         </div>
       </div>
 
