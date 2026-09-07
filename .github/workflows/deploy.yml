@@ -34,6 +34,8 @@ jobs:
         run: node scripts/fix-media-upload.mjs
       - name: Apply visibility and timezone patches
         run: node scripts/fix-visibility-and-timezone.mjs
+      - name: Apply student add flow patches
+        run: node scripts/fix-add-student-flow.mjs
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: TypeScript check
@@ -45,8 +47,8 @@ jobs:
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/services/storage.ts src/services/schoolSystem.ts src/components/ClassesAndStudentsModule.tsx src/components/AdminPanelModule.tsx src/components/CurriculaModule.tsx src/components/LoginModule.tsx src/components/LectureSystemModule.tsx src/components/FridayLiturgyModule.tsx src/App.tsx index.html scripts/fix-branding-footer.mjs scripts/fix-visibility-and-timezone.mjs src/services/egyptTime.ts
-            git commit -m "feat: apply Egypt time and servant lecture visibility fixes"
+            git add src/services/storage.ts src/services/schoolSystem.ts src/components/ClassesAndStudentsModule.tsx src/components/AdminPanelModule.tsx src/components/CurriculaModule.tsx src/components/LoginModule.tsx src/components/LectureSystemModule.tsx src/components/FridayLiturgyModule.tsx src/App.tsx index.html scripts/fix-branding-footer.mjs scripts/fix-visibility-and-timezone.mjs scripts/fix-add-student-flow.mjs src/services/egyptTime.ts
+            git commit -m "feat: apply student add flow fixes"
             git push origin HEAD:main
           fi
       - name: Setup Pages
