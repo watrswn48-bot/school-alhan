@@ -3,35 +3,25 @@
  * منصة الشماس والأكاديمية - نظام إدارة مدرسة الشمامسة
  */
 
-export type DeaconRank =
-  | 'لم يشرس'
-  | 'إبصالتس'
-  | 'أغنسطس'
-  | 'عريف'
-  | 'إبذياكون'
-  | 'دياكون'
-  | 'أرشيدياكون';
-
+export type DeaconRank = 'لم يشرس' | 'إبصالتس' | 'أغنسطس' | 'عريف' | 'إبذياكون' | 'دياكون' | 'أرشيدياكون';
 export type AcademicLevel = string;
 export type AcademicYear = string;
 export type YearStatus = 'passed' | 'failed' | 'active' | 'future';
 
-/**
- * صلاحيات قابلة للتوسعة. الحضور متاح افتراضياً لكل الخدام،
- * بينما باقي الوظائف يحددها مسؤول النظام لكل حساب بشكل مستقل.
- */
+/** صلاحيات مستقلة يحددها الأبونا لكل خادم. */
 export interface ServantPermissions {
-  canRecordAttendance: boolean;
-  canAddEditStudents: boolean;
-  canUploadFiles: boolean;
-  canSetRatings: boolean;
-  canEvaluateLectures: boolean;
-  canWriteNotes: boolean;
-  canViewAnalytics: boolean;
-  canManageLectures: boolean;
-  canManageCurricula: boolean;
-  canManageGrades: boolean;
-  [key: string]: boolean;
+  /** الحضور متاح افتراضياً لكل الخدام */
+  canRecordAttendance?: boolean;
+  canAddEditStudents?: boolean;
+  canUploadFiles?: boolean;
+  canSetRatings?: boolean;
+  canEvaluateLectures?: boolean;
+  canWriteNotes?: boolean;
+  canViewAnalytics?: boolean;
+  canManageLectures?: boolean;
+  canManageCurricula?: boolean;
+  canManageGrades?: boolean;
+  [key: string]: boolean | undefined;
 }
 
 export type ServantRole = 'admin' | 'family_admin' | 'servant';
