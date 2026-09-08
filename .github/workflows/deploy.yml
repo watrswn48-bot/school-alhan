@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Apply integrated project patches
         run: node scripts/apply-required-patches.mjs
       - name: Apply safe branding and footer patches
@@ -57,8 +57,8 @@ jobs:
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/services/storage.ts src/services/schoolSystem.ts src/components/ClassesAndStudentsModule.tsx src/components/AdminPanelModule.tsx src/components/CurriculaModule.tsx src/components/LoginModule.tsx src/components/LectureSystemModule.tsx src/components/FridayLiturgyModule.tsx src/components/AnalyticsModule.tsx src/App.tsx src/components/AddStudentModule.tsx src/components/CumulativeProfileModal.tsx index.html scripts/fix-branding-footer.mjs scripts/fix-visibility-and-timezone.mjs scripts/fix-add-student-flow.mjs scripts/fix-card-persistence.mjs scripts/fix-student-national-id-profile.mjs scripts/fix-academic-matrix.mjs scripts/fix-admin-duplicate-materials.mjs scripts/fix-priest-name.mjs src/services/egyptTime.ts
-            git commit -m "fix: remove duplicate materials section from admin"
+            git add src/services/storage.ts src/services/schoolSystem.ts src/services/mediaStorage.ts src/components/ClassesAndStudentsModule.tsx src/components/AdminPanelModule.tsx src/components/CurriculaModule.tsx src/components/LoginModule.tsx src/components/LectureSystemModule.tsx src/components/FridayLiturgyModule.tsx src/components/AnalyticsModule.tsx src/App.tsx src/components/AddStudentModule.tsx src/components/CumulativeProfileModal.tsx index.html scripts/fix-branding-footer.mjs scripts/fix-visibility-and-timezone.mjs scripts/fix-add-student-flow.mjs scripts/fix-card-persistence.mjs scripts/fix-student-national-id-profile.mjs scripts/fix-academic-matrix.mjs scripts/fix-admin-duplicate-materials.mjs scripts/fix-priest-name.mjs src/services/egyptTime.ts
+            git commit -m "chore: persist verified generated patches"
             git push origin HEAD:main
           fi
       - name: Setup Pages
