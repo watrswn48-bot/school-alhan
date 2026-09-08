@@ -45,5 +45,6 @@ const replacement = `              <div className="space-y-2 pt-1 text-xs text-s
                 </div>
               </div>`;
 
-content = content.slice(0, start) + replacement + content.slice(end + 1);
+// Keep the outer Main Info closing tag from the original file; do not skip a character.
+content = content.slice(0, start) + replacement + content.slice(end);
 fs.writeFileSync(path, content);
