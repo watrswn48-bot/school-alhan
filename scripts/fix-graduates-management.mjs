@@ -3,21 +3,7 @@ import fs from 'node:fs';
 const schoolPath = 'src/services/schoolSystem.ts';
 let school = fs.readFileSync(schoolPath, 'utf8');
 
-const oldAdvance = `function advanceChantStage(student: Student): Student {
-  const levels = getAcademicLevels();
-  const years = getAcademicYears();
-  let nextL = student.levelIndex;
-  let nextY = student.yearIndex + 1;
-  if (nextY >= years.length) { nextY = 0; nextL += 1; }
-  if (nextL >= levels.length) return student;
-  const history = Array.isArray(student.history) ? [...student.history] : [];
-  const current = history.find(h => h.levelIndex === student.levelIndex && h.yearIndex === student.yearIndex);
-  if (current) { current.status = 'passed'; current.archivedAt = new Date().toISOString(); }
-  const next = history.find(h => h.levelIndex === nextL && h.yearIndex === nextY);
-  if (next) next.status = 'active';
-  return { ...student, levelIndex: nextL, yearIndex: nextY, level: levels[nextL], year: years[nextY], history };
-}`;
-
+const oldAdvance = /function advanceChantStage\(student: Student\): Student \{[\s\S]*?\n\}/;
 const newAdvance = `function advanceChantStage(student: Student, graduationAcademicYear?: string): Student {
   const levels = getAcademicLevels();
   const years = getAcademicYears();
@@ -35,19 +21,16 @@ const newAdvance = `function advanceChantStage(student: Student, graduationAcade
   if (next) next.status = 'active';
   return { ...student, levelIndex: nextL, yearIndex: nextY, level: levels[nextL], year: years[nextY], history, graduationYear: undefined, graduatedAt: undefined };
 }`;
-
-if (school.includes(oldAdvance)) school = school.replace(oldAdvance, newAdvance);
-const oldPromoted = `const promoted = advanceChantStage(updated);`;
-if (school.includes(oldPromoted)) school = school.replace(oldPromoted, `const promoted = advanceChantStage(updated, last || year);`);
+if (!school.includes('graduationYear: Number.isFinite(endYear)')) school = school.replace(oldAdvance, newAdvance);
+school = school.replace('const promoted = advanceChantStage(updated);', 'const promoted = advanceChantStage(updated, last || year);');
 fs.writeFileSync(schoolPath, school, 'utf8');
 
 const adminPath = 'src/components/AdminPanelModule.tsx';
 let admin = fs.readFileSync(adminPath, 'utf8');
-if (!admin.includes("./GraduatesModule")) admin = admin.replace("import { ALL_SERVANT_PERMISSIONS", "import { GraduatesModule } from './GraduatesModule';\nimport { ALL_SERVANT_PERMISSIONS");
+if (!admin.includes("import { GraduatesModule } from './GraduatesModule';")) admin = admin.replace(/import \{ ALL_SERVANT_PERMISSIONS/, "import { GraduatesModule } from './GraduatesModule';\nimport { ALL_SERVANT_PERMISSIONS");
 admin = admin.replace("useState<'servants' | 'branding' | 'backup'>('servants')", "useState<'servants' | 'graduates' | 'branding' | 'backup'>('servants')");
-admin = admin.replace("(['servants','إدارة الخدام والصلاحيات'],['branding','شعار الأكاديمية والموقع'],['backup','النسخ الاحتياطي والاستعادة'])", "(['servants','إدارة الخدام والصلاحيات'],['graduates','الخريجون'],['branding','شعار الأكاديمية والموقع'],['backup','النسخ الاحتياطي والاستعادة'])");
-const anchor = "    {activeAdminTab==='servants' && <div";
-if (!admin.includes("activeAdminTab==='graduates'")) admin = admin.replace(anchor, "    {activeAdminTab==='graduates' && <GraduatesModule session={session} />}\n\n" + anchor);
+admin = admin.replace("([['servants','إدارة الخدام والصلاحيات'],['branding','شعار الأكاديمية والموقع'],['backup','النسخ الاحتياطي والاستعادة']", "([['servants','إدارة الخدام والصلاحيات'],['graduates','الخريجون'],['branding','شعار الأكاديمية والموقع'],['backup','النسخ الاحتياطي والاستعادة']");
+if (!admin.includes("activeAdminTab==='graduates'")) admin = admin.replace("    {activeAdminTab==='servants' && <div", "    {activeAdminTab==='graduates' && <GraduatesModule session={session} />}\n    {activeAdminTab==='servants' && <div");
 fs.writeFileSync(adminPath, admin, 'utf8');
 
 const workflowPath = '.github/workflows/deploy.yml';
