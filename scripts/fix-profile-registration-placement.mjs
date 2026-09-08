@@ -43,12 +43,6 @@ const replacement = `              <div className="space-y-2 pt-1 text-xs text-s
                     </span>
                   )}
                 </div>
-
-                {student.notes && (
-                  <div className="text-[11px] text-slate-400 text-center sm:text-right">
-                    ملاحظة: {student.notes}
-                  </div>
-                )}
               </div>`;
 
 content = content.slice(0, start) + replacement + content.slice(end + 1);
