@@ -241,6 +241,15 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
                 <span className="flex items-center gap-1 font-mono">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                   الرقم القومي: {student.nationalId || 'غير مسجل'}
+                <div className="w-full flex flex-wrap items-center gap-2 pt-1 text-[11px] border-t border-slate-800/80 mt-1">
+                  <span className="font-black text-slate-300">بيانات التسجيل:</span>
+                  {student.notes && <span className="text-slate-400">ملاحظات: {student.notes}</span>}
+                  {student.graduationYear && (
+                    <span className="font-black text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                      خريج {student.graduationYear}
+                    </span>
+                  )}
+                </div>
                 </span>
                 <span className="text-amber-300 font-bold bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/20">
                   بالخدمة: {student.level} ({student.year})
@@ -293,19 +302,6 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
                 </button>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* STUDENT REGISTRATION DETAILS */}
-        <div className="bg-slate-900 border-b border-slate-800 px-4 py-3 shrink-0">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-black text-slate-300">بيانات التسجيل:</span>
-            <span className="text-slate-400">{student.notes}</span>
-            {student.graduationYear && (
-              <span className="mr-auto text-[11px] font-black text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-                خريج {student.graduationYear}
-              </span>
-            )}
           </div>
         </div>
 
