@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { ShieldCheck, UserPlus, QrCode, Trash2, Download, Upload, Database, CheckCircle2, X, Lock, User, ShieldAlert, BookOpen, RotateCcw, Cloud, CloudUpload, CloudDownload, Image as ImageIcon } from 'lucide-react';
 import { Servant, ServantPermissions, ServantRole, UserSession } from '../types';
 import { getServants, saveServant, deleteServant, exportDataJSON, importDataJSON, getAcademicLevels, saveAcademicLevels, renameAcademicLevel, addAcademicLevel, deleteAcademicLevel, deleteAllAcademicLevels, getAcademicYears, saveAcademicYears, renameAcademicYear, addAcademicYear, deleteAcademicYear, deleteAllAcademicYears, getStudents, syncAllToFirebase, pullFromFirebase, ACADEMIC_LEVELS, ACADEMIC_YEARS, getSchoolLogo, saveSchoolLogo, resetSchoolLogo, DEFAULT_SCHOOL_LOGO } from '../services/storage';
+import { GraduatesModule } from './GraduatesModule';
 import { ALL_SERVANT_PERMISSIONS, PERMISSION_LABELS, permissionsForRole, normalizeServantPermissions, roleLabel } from '../services/permissions';
 
 interface AdminPanelModuleProps { session: UserSession; }
 
 export const AdminPanelModule: React.FC<AdminPanelModuleProps> = ({ session }) => {
   const [servantsList, setServantsList] = useState<Servant[]>(() => getServants());
-  const [activeAdminTab, setActiveAdminTab] = useState<'servants' | 'branding' | 'backup'>('servants');
+  const [activeAdminTab, setActiveAdminTab] = useState<'servants' | 'graduates' | 'branding' | 'backup'>('servants');
   const [currentLogo, setCurrentLogo] = useState<string>(() => getSchoolLogo());
   const [customLogoUrlInput, setCustomLogoUrlInput] = useState('');
   const [logoNotification, setLogoNotification] = useState<string | null>(null);
@@ -83,9 +84,10 @@ export const AdminPanelModule: React.FC<AdminPanelModuleProps> = ({ session }) =
     </div>
 
     <div className="bg-slate-950 p-1.5 rounded-2xl border border-slate-800 flex items-center gap-2 overflow-x-auto">
-      {([['servants','إدارة الخدام والصلاحيات'],['branding','شعار الأكاديمية والموقع'],['backup','النسخ الاحتياطي والاستعادة']] as const).map(([key,label])=><button key={key} onClick={()=>setActiveAdminTab(key)} className={`px-5 py-2.5 rounded-xl text-xs font-bold shrink-0 ${activeAdminTab===key?'bg-amber-500 text-slate-950':'text-slate-400 hover:bg-slate-900'}`}>{label}{key==='servants'?` (${servantsList.length})`:''}</button>)}
+      {([['servants','إدارة الخدام والصلاحيات'],['graduates','الخريجون'],['branding','شعار الأكاديمية والموقع'],['backup','النسخ الاحتياطي والاستعادة']] as const).map(([key,label])=><button key={key} onClick={()=>setActiveAdminTab(key)} className={`px-5 py-2.5 rounded-xl text-xs font-bold shrink-0 ${activeAdminTab===key?'bg-amber-500 text-slate-950':'text-slate-400 hover:bg-slate-900'}`}>{label}{key==='servants'?` (${servantsList.length})`:''}</button>)}
     </div>
 
+    {activeAdminTab==='graduates' && <GraduatesModule session={session} />}
     {activeAdminTab==='servants' && <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
       <div className="flex items-center gap-2 border-b border-slate-800 pb-4"><ShieldCheck className="w-5 h-5 text-amber-400"/><div><h3 className="text-base font-bold text-slate-100">أنواع الخدام والصلاحيات الفردية</h3><p className="text-[11px] text-slate-500">الأبونا يقدر يفتح أو يقفل أي صلاحية لأي خادم بشكل مستقل.</p></div></div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">

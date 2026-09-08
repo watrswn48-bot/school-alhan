@@ -142,19 +142,22 @@ export function chantYearPassStatus(student: Student): { passed: boolean; reason
   return { passed: true, reason: 'ناجح في جميع المواد بنسبة 50% أو أكثر.', required: requiredSubjects.length, completed };
 }
 
-function advanceChantStage(student: Student): Student {
+function advanceChantStage(student: Student, graduationAcademicYear?: string): Student {
   const levels = getAcademicLevels();
   const years = getAcademicYears();
-  let nextL = student.levelIndex;
-  let nextY = student.yearIndex + 1;
-  if (nextY >= years.length) { nextY = 0; nextL += 1; }
-  if (nextL >= levels.length) return student;
   const history = Array.isArray(student.history) ? [...student.history] : [];
   const current = history.find(h => h.levelIndex === student.levelIndex && h.yearIndex === student.yearIndex);
   if (current) { current.status = 'passed'; current.archivedAt = new Date().toISOString(); }
+  let nextL = student.levelIndex;
+  let nextY = student.yearIndex + 1;
+  if (nextY >= years.length) { nextY = 0; nextL += 1; }
+  if (nextL >= levels.length) {
+    const endYear = Number((graduationAcademicYear || currentAcademicYear()).split('/')[1]);
+    return { ...student, history, graduationYear: Number.isFinite(endYear) ? endYear : new Date().getFullYear(), graduatedAt: new Date().toISOString() };
+  }
   const next = history.find(h => h.levelIndex === nextL && h.yearIndex === nextY);
   if (next) next.status = 'active';
-  return { ...student, levelIndex: nextL, yearIndex: nextY, level: levels[nextL], year: years[nextY], history };
+  return { ...student, levelIndex: nextL, yearIndex: nextY, level: levels[nextL], year: years[nextY], history, graduationYear: undefined, graduatedAt: undefined };
 }
 
 export async function runAutomaticAcademicTransition(force = false): Promise<{ processed: boolean; schoolAdvanced: number; chantAdvanced: number; chantHeld: number }> {
@@ -181,7 +184,7 @@ export async function runAutomaticAcademicTransition(force = false): Promise<{ p
     }
     const status = chantYearPassStatus(original);
     if (status.passed) {
-      const promoted = advanceChantStage(updated);
+      const promoted = advanceChantStage(updated, last || year);
       if (promoted.levelIndex !== updated.levelIndex || promoted.yearIndex !== updated.yearIndex) chantAdvanced++;
       updated = promoted;
     } else chantHeld++;
