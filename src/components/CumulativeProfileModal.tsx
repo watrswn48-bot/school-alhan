@@ -1,6 +1,6 @@
 /**
  * Module 3: CUMULATIVE STUDENT PROFILE (الملف الشخصي التراكمي للطالب)
- * الهيكل التراكمي لـ 16 سنة دراسية مع الشريط العلوي والتبويبات الـ 4 التفاعلية
+ * الهيكل التراكمي للمراحل والسنوات الدراسية مع الشريط العلوي والتبويبات الـ 4 التفاعلية
  */
 
 import React, { useState } from 'react';
@@ -59,7 +59,6 @@ interface CumulativeProfileModalProps {
   onClose: () => void;
   session: UserSession;
   onGenerateIDCard: (student: Student) => void;
-  onTriggerPromotion?: (student: Student) => void;
   onLogout?: () => void;
 }
 
@@ -69,7 +68,6 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
   onClose,
   session,
   onGenerateIDCard,
-  onTriggerPromotion,
   onLogout,
 }) => {
   const levels = getAcademicLevels();
@@ -176,7 +174,7 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
         {/* STICKY TOP BAR (الملف الشخصي التراكمي للطالب) */}
         <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 p-6 border-b border-slate-800 shrink-0 relative shadow-md overflow-hidden">
           {/* Subtle Background Watermark of School Logo */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 opacity-[0.06] pointer-events-none rounded-full overflow-hidden select-none">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 opacity-[0.10] pointer-events-none rounded-full overflow-hidden select-none">
             <img
               src={getSchoolLogo()}
               alt=""
@@ -249,14 +247,14 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <span className="text-amber-300 font-bold bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/20">
+                  <span className="text-amber-300 font-bold bg-amber-500/5 backdrop-blur-sm px-2.5 py-0.5 rounded-lg border border-amber-500/20">
                     الخدمة: {student.level} - {student.year}
                   </span>
-                  <span className="text-sky-300 font-bold bg-sky-500/10 px-2.5 py-0.5 rounded-lg border border-sky-500/20">
+                  <span className="text-sky-300 font-bold bg-sky-500/5 backdrop-blur-sm px-2.5 py-0.5 rounded-lg border border-sky-500/20">
                     المدرسة: {student.schoolLevel || 'غير مسجل'} - {student.schoolYear || 'غير مسجل'}
                   </span>
                   {student.graduationYear && (
-                    <span className="font-black text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                    <span className="font-black text-emerald-300 bg-emerald-500/5 backdrop-blur-sm border border-emerald-500/20 px-2 py-0.5 rounded-full">
                       خريج {student.graduationYear}
                     </span>
                   )}
@@ -293,16 +291,6 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
                 <QrCode className="w-4 h-4" />
                 بطاقة الهوية الذكية
               </button>
-
-              {session.role === 'admin' && onTriggerPromotion && (
-                <button
-                  onClick={() => onTriggerPromotion(student)}
-                  className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-2xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2"
-                >
-                  <TrendingUp className="w-4 h-4" />
-                  اعتماد والترفيع
-                </button>
-              )}
             </div>
           </div>
         </div>
