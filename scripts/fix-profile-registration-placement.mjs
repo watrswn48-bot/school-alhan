@@ -4,12 +4,12 @@ const path = 'src/components/CumulativeProfileModal.tsx';
 let content = fs.readFileSync(path, 'utf8');
 
 const startToken = '              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-slate-300 pt-1">';
-const endToken = '\n              </div>\n            </div>\n\n            {/* Action Buttons */}';
-
+const actionMarker = '            {/* Action Buttons */}';
 const start = content.indexOf(startToken);
+const end = content.indexOf(actionMarker, start);
+
 if (start === -1) throw new Error('Profile info row start not found');
-const end = content.indexOf(endToken, start);
-if (end === -1) throw new Error('Profile info row end not found');
+if (end === -1) throw new Error('Action buttons marker not found');
 
 const replacement = `              <div className="space-y-2 pt-1 text-xs text-slate-300">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
@@ -43,8 +43,10 @@ const replacement = `              <div className="space-y-2 pt-1 text-xs text-s
                     </span>
                   )}
                 </div>
-              </div>`;
+              </div>
+            </div>
 
-// Keep the outer Main Info closing tag from the original file; do not skip a character.
+`;
+
 content = content.slice(0, start) + replacement + content.slice(end);
 fs.writeFileSync(path, content);
