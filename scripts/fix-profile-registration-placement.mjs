@@ -42,14 +42,14 @@ const replacement = `            {/* Main Info */}
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <span className="text-amber-300 font-bold bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/20">
+                  <span className="text-amber-300 font-bold bg-amber-500/5 backdrop-blur-sm px-2.5 py-0.5 rounded-lg border border-amber-500/20">
                     الخدمة: {student.level} - {student.year}
                   </span>
-                  <span className="text-sky-300 font-bold bg-sky-500/10 px-2.5 py-0.5 rounded-lg border border-sky-500/20">
+                  <span className="text-sky-300 font-bold bg-sky-500/5 backdrop-blur-sm px-2.5 py-0.5 rounded-lg border border-sky-500/20">
                     المدرسة: {student.schoolLevel || 'غير مسجل'} - {student.schoolYear || 'غير مسجل'}
                   </span>
                   {student.graduationYear && (
-                    <span className="font-black text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                    <span className="font-black text-emerald-300 bg-emerald-500/5 backdrop-blur-sm border border-emerald-500/20 px-2 py-0.5 rounded-full">
                       خريج {student.graduationYear}
                     </span>
                   )}
@@ -60,4 +60,14 @@ const replacement = `            {/* Main Info */}
 `;
 
 content = content.slice(0, start) + replacement + content.slice(end);
+
+// Remove the old manual promotion action; progression is automatic now.
+content = content.replace(/\n\s*\{session\.role === 'admin' && onTriggerPromotion && \(\n[\s\S]*?\n\s*\)\}/, '');
+content = content.replace(/\n\s*onTriggerPromotion\?: \(student: Student\) => void;/, '');
+content = content.replace(/\n\s*onTriggerPromotion,/, '');
+
+// Keep the profile watermark visible behind the translucent fields without overpowering them.
+content = content.replace('opacity-[0.06] pointer-events-none rounded-full', 'opacity-[0.10] pointer-events-none rounded-full');
+content = content.replace('الهيكل التراكمي لـ 16 سنة دراسية', 'الهيكل التراكمي للمراحل والسنوات الدراسية');
+
 fs.writeFileSync(path, content);
