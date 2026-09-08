@@ -238,6 +238,10 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
                   <Phone className="w-3.5 h-3.5 text-sky-400" />
                   ولي الأمر: {student.guardianPhone || 'غير مسجل'}
                 </span>
+                <span className="flex items-center gap-1 font-mono">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  الرقم القومي: {student.nationalId || 'غير مسجل'}
+                </span>
                 <span className="text-amber-300 font-bold bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/20">
                   بالخدمة: {student.level} ({student.year})
                 </span>
