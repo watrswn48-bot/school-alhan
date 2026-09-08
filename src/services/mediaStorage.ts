@@ -1,4 +1,4 @@
-import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
+import { getDownloadURL, getStorage, ref, uploadBytes, uploadBytesResumable } from 'firebase/storage';
 import { app } from '../lib/firebase';
 
 const storage = getStorage(app);
@@ -57,16 +57,61 @@ async function compressStudentPhoto(file: File): Promise<File> {
   }
 }
 
-export async function uploadStudentPhoto(file: File, studentCode: string): Promise<string> {
+export async function uploadStudentPhoto(
+  file: File,
+  studentCode: string,
+  onProgress?: (percent: number) => void,
+): Promise<string> {
   if (!file.type.startsWith('image/')) throw new Error('يجب اختيار ملف صورة.');
 
   const compressedFile = await compressStudentPhoto(file);
   const safeName = safeFileName(compressedFile.name || 'student-photo.jpg');
   const path = `student-photos/${studentCode}/${Date.now()}-${safeName}`;
   const storageRef = ref(storage, path);
-  const snapshot = await uploadBytes(storageRef, compressedFile, {
+  const task = uploadBytesResumable(storageRef, compressedFile, {
     contentType: 'image/jpeg',
     customMetadata: { originalName: file.name, studentCode },
   });
-  return getDownloadURL(snapshot.ref);
+
+  onProgress?.(0);
+
+  return await new Promise<string>((resolve, reject) => {
+    let finished = false;
+    const timeout = window.setTimeout(() => {
+      if (finished) return;
+      finished = true;
+      task.cancel();
+      reject(new Error('رفع الصورة استغرق وقتًا أطول من اللازم. تأكد من الإنترنت وإعدادات Firebase Storage ثم حاول مرة أخرى.'));
+    }, 45000);
+
+    task.on('state_changed',
+      snapshot => {
+        const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        onProgress?.(percent);
+      },
+      error => {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(timeout);
+        const code = String((error as { code?: string }).code || '');
+        if (code.includes('storage/unauthorized')) reject(new Error('Firebase Storage رفض رفع الصورة. راجع صلاحيات Storage.'));
+        else if (code.includes('storage/canceled')) reject(new Error('تم إلغاء رفع الصورة.'));
+        else if (code.includes('storage/quota-exceeded')) reject(new Error('مساحة Firebase Storage غير كافية حاليًا.'));
+        else if (code.includes('storage/retry-limit-exceeded')) reject(new Error('انقطع الاتصال أثناء رفع الصورة. حاول مرة أخرى.'));
+        else reject(new Error(`تعذر رفع الصورة (${code || 'خطأ غير معروف'}).`));
+      },
+      async () => {
+        if (finished) return;
+        finished = true;
+        window.clearTimeout(timeout);
+        try {
+          const url = await getDownloadURL(task.snapshot.ref);
+          onProgress?.(100);
+          resolve(url);
+        } catch {
+          reject(new Error('تم رفع الصورة لكن تعذر الحصول على رابطها. راجع صلاحيات Firebase Storage.'));
+        }
+      },
+    );
+  });
 }
