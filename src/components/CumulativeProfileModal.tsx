@@ -183,27 +183,16 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
             />
           </div>
 
+{session.mode !== 'student' && (
           <button
             onClick={onClose}
             className="absolute left-6 top-6 p-2 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-2xl transition-colors no-print z-20"
           >
             <X className="w-6 h-6" />
           </button>
+          )}
 
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 relative z-10">
-            {/* School Logo Badge */}
-            <div className="flex flex-col items-center gap-1.5 pl-0 sm:pl-5 border-b sm:border-b-0 sm:border-l border-slate-800 pb-3 sm:pb-0 shrink-0">
-              <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-amber-500/60 bg-slate-950 p-1 shadow-xl ring-2 ring-amber-400/40">
-                <img
-                  src={getSchoolLogo()}
-                  alt="شعار المدرسة"
-                  className="w-full h-full object-cover rounded-xl"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-              <span className="text-[10px] font-black text-amber-400">مدرسة الشماس</span>
-            </div>
-
             {/* Photo & QR Code */}
             <div className="relative group shrink-0">
               <img
@@ -217,9 +206,9 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
             </div>
 
             {/* Main Info */}
-            <div className="text-center sm:text-right space-y-1.5 flex-1">
+            <div className="text-center sm:text-right space-y-1.5 flex-1 min-w-0">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <h2 className="text-xl sm:text-2xl font-black text-slate-100 tracking-tight">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-100 tracking-tight break-words">
                   {student.fullName}
                 </h2>
                 <span className="font-mono text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-full">
@@ -228,7 +217,7 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
               </div>
 
               <div className="space-y-2 pt-1 text-xs text-slate-300">
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
                   <span className="flex items-center gap-1 font-mono">
                     <Phone className="w-3.5 h-3.5 text-amber-400" />
                     الطالب: {student.phone || 'غير مسجل'}
