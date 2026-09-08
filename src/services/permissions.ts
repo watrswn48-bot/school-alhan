@@ -1,11 +1,11 @@
 import { ServantPermissions, ServantRole, UserSession, Servant } from '../types';
 
 export const ALL_SERVANT_PERMISSIONS: (keyof ServantPermissions)[] = [
-  'canRecordAttendance','canAddEditStudents','canUploadFiles','canEvaluateLectures','canTeachLectures','canManageLectures','canManageCurricula','canManageSubjects','canManageGrades','canManageAcademicYear','canWriteNotes','canViewAnalytics',
+  'canRecordAttendance','canAddEditStudents','canUploadFiles','canEvaluateLectures','canTeachLectures','canManageLectures','canManageCurricula','canManageSubjects','canManageGrades','canManageAcademicYear','canViewAdminPanel','canWriteNotes','canViewAnalytics',
 ];
 
 export const PERMISSION_LABELS: Record<string, string> = {
-  canRecordAttendance: 'تسجيل الحضور والغياب', canAddEditStudents: 'إضافة وتعديل الطلاب', canUploadFiles: 'رفع الملفات والمرفقات', canEvaluateLectures: 'تقييم الطلاب بعد المحاضرات', canTeachLectures: 'السماح باختياره كمحاضر', canManageLectures: 'إنشاء وإدارة المحاضرات', canManageCurricula: 'إدارة المناهج ومكتبة الألحان', canManageSubjects: 'إضافة وإدارة مواد مدرسة الألحان', canManageGrades: 'رصد وإدارة النتائج', canManageAcademicYear: 'إدارة ومراجعة السنة الدراسية', canWriteNotes: 'كتابة الملاحظات والسلوك', canViewAnalytics: 'عرض الإحصائيات والتحليلات',
+  canRecordAttendance: 'تسجيل الحضور والغياب', canAddEditStudents: 'إضافة وتعديل الطلاب', canUploadFiles: 'رفع الملفات والمرفقات', canEvaluateLectures: 'تقييم الطلاب بعد المحاضرات', canTeachLectures: 'السماح باختياره كمحاضر', canManageLectures: 'إنشاء وإدارة المحاضرات', canManageCurricula: 'إدارة المناهج ومكتبة الألحان', canManageSubjects: 'إضافة وإدارة مواد مدرسة الألحان', canManageGrades: 'رصد وإدارة النتائج', canManageAcademicYear: 'إدارة ومراجعة السنة الدراسية', canViewAdminPanel: 'ظهور وفتح لوحة الإدارة', canWriteNotes: 'كتابة الملاحظات والسلوك', canViewAnalytics: 'عرض الإحصائيات والتحليلات',
 };
 
 export const ADMIN_PERMISSIONS: ServantPermissions = Object.fromEntries(ALL_SERVANT_PERMISSIONS.map(key => [key, true])) as ServantPermissions;
