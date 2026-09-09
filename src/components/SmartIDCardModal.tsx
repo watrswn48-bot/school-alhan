@@ -3,6 +3,7 @@ import { Printer, X } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Student } from '../types';
 import { getSchoolLogo } from '../services/storage';
+import '../print-id-card.css';
 
 interface SmartIDCardModalProps {
   student: Student | null;
