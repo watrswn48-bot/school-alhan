@@ -41,7 +41,6 @@ import {
   DEACON_RANKS,
   SCHOOL_LEVELS,
   SCHOOL_YEARS,
-  SCHOOL_CLASSES,
 } from '../services/storage';
 
 interface ClassesAndStudentsProps {
@@ -51,6 +50,14 @@ interface ClassesAndStudentsProps {
 }
 
 type ViewMode = 'classes' | 'cards' | 'table';
+
+const SCHOOL_CLASSES_FILTER = [
+  'كيجي',
+  'أولى وتانية',
+  'تالتة ورابعة',
+  'خامسة وسادسة',
+  'إعدادي وثانوي',
+] as const;
 
 export const ClassesAndStudentsModule: React.FC<ClassesAndStudentsProps> = ({
   session,
@@ -389,8 +396,24 @@ export const ClassesAndStudentsModule: React.FC<ClassesAndStudentsProps> = ({
           )}
         </div>
 
-        {/* Deacon Rank Filter & Reset */}
-        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+        {/* Class + Deacon Rank Filters & Reset */}
+        <div className="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
+          <div className="relative">
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none appearance-none pr-8"
+            >
+              <option value="ALL">جميع الفصول</option>
+              {SCHOOL_CLASSES_FILTER.map((schoolClass) => (
+                <option key={schoolClass} value={schoolClass}>
+                  {schoolClass}
+                </option>
+              ))}
+            </select>
+            <Filter className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-2.5 pointer-events-none" />
+          </div>
+
           <div className="relative">
             <select
               value={selectedRank}
@@ -407,11 +430,12 @@ export const ClassesAndStudentsModule: React.FC<ClassesAndStudentsProps> = ({
             <Filter className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-2.5 pointer-events-none" />
           </div>
 
-          {(selectedLevel !== 'ALL' || selectedYear !== 'ALL' || selectedRank !== 'ALL' || searchQuery) && (
+          {(selectedLevel !== 'ALL' || selectedYear !== 'ALL' || selectedClass !== 'ALL' || selectedRank !== 'ALL' || searchQuery) && (
             <button
               onClick={() => {
                 setSelectedLevel('ALL');
                 setSelectedYear('ALL');
+                setSelectedClass('ALL');
                 setSelectedRank('ALL');
                 setSearchQuery('');
               }}
@@ -425,85 +449,84 @@ export const ClassesAndStudentsModule: React.FC<ClassesAndStudentsProps> = ({
 
       {/* Mode 1: Class Folders Grid (عرض الفصول) */}
       {viewMode === 'classes' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {academicLevels.map((levelName) => {
-              const levelStudents = studentsList.filter((s) => s.level === levelName);
-              const isLevelSelected = selectedLevel === levelName;
-
-              return (
-                <div
-                  key={levelName}
-                  className={`bg-slate-900 border rounded-3xl p-5 shadow-xl transition-all duration-300 space-y-4 relative overflow-hidden ${
-                    isLevelSelected
-                      ? 'border-amber-500/80 ring-2 ring-amber-500/20'
-                      : 'border-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  {/* Decorative Background */}
-                  <div className="absolute top-0 left-0 w-24 h-24 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full blur-2xl pointer-events-none" />
-
-                  <div className="flex items-center justify-between">
-                    <div className="p-3 bg-slate-950 border border-slate-800 rounded-2xl text-amber-400">
-                      <FolderOpen className="w-6 h-6" />
-                    </div>
-                    <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 text-[11px] font-bold rounded-full border border-amber-500/30">
-                      {levelStudents.length} طالب
-                    </span>
-                  </div>
-
-                  <div>
-                    <h3 className="text-base font-bold text-slate-100">{levelName}</h3>
-                    <p className="text-xs text-slate-400 mt-1">تضم {academicYears.length} سنوات/فصول دراسية</p>
-                  </div>
-
-                  {/* Years Breakdown inside this level */}
-                  <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
-                    {academicYears.map((yr) => {
-                      const yrCount = levelStudents.filter((s) => s.year === yr).length;
-                      return (
-                        <button
-                          key={yr}
-                          onClick={() => {
-                            setSelectedLevel(levelName);
-                            setSelectedYear(yr);
-                            setViewMode('cards');
-                          }}
-                          className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-950/60 hover:bg-slate-800 text-xs transition-colors group"
-                        >
-                          <span className="text-slate-300 group-hover:text-amber-300 font-medium">
-                            {yr}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-lg bg-slate-900 text-slate-400 text-[10px] font-mono group-hover:bg-amber-500 group-hover:text-slate-950 font-bold transition-all">
-                            {yrCount} طلاب
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setSelectedLevel(levelName);
-                      setSelectedYear('ALL');
-                      setViewMode('cards');
-                    }}
-                    className="w-full py-2 bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-200 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1"
-                  >
-                    عرض طلاب {levelName}
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Prompt to switch if filtered */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 text-center">
-            <span className="text-xs text-slate-400">
-              يمكنك الانتقال لعرض بطاقات الطلاب مباشرة أو جدول التفاصيل من أعلى الشاشة.
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1 flex-wrap gap-2">
+            <div>
+              <h3 className="text-sm font-black text-slate-100">الفصول الدراسية</h3>
+              <p className="text-[11px] text-slate-500 mt-1">
+                {selectedYear === 'ALL'
+                  ? 'اختر سنة من أعلى الصفحة لتصفية الفصول والطلاب حسب السنة.'
+                  : `الفصول المعروضة لسنة ${selectedYear}`}
+              </p>
+            </div>
+            <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-amber-300 font-bold">
+              {selectedLevel === 'ALL' ? 'كل المراحل' : selectedLevel}
+              {' — '}
+              {selectedYear === 'ALL' ? 'كل السنوات' : selectedYear}
             </span>
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {SCHOOL_CLASSES_FILTER
+              .filter((schoolClass) => selectedClass === 'ALL' || selectedClass === schoolClass)
+              .map((schoolClass) => {
+                const classStudents = studentsList.filter((s) => {
+                  if (s.schoolClass !== schoolClass) return false;
+                  if (selectedLevel !== 'ALL' && s.level !== selectedLevel) return false;
+                  if (selectedYear !== 'ALL' && s.year !== selectedYear) return false;
+                  return true;
+                });
+
+                return (
+                  <button
+                    key={schoolClass}
+                    onClick={() => {
+                      setSelectedClass(schoolClass);
+                      setViewMode('cards');
+                    }}
+                    className="text-right bg-slate-900 border border-slate-800 hover:border-amber-500/60 hover:bg-slate-800/70 rounded-3xl p-5 shadow-lg transition-all group"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="p-3 bg-slate-950 border border-slate-800 rounded-2xl text-amber-400 group-hover:border-amber-500/40">
+                        <FolderOpen className="w-6 h-6" />
+                      </div>
+                      <span className="px-2.5 py-1 bg-amber-500/10 text-amber-300 text-[10px] font-bold rounded-full border border-amber-500/20">
+                        {classStudents.length} طالب
+                      </span>
+                    </div>
+
+                    <h3 className="mt-4 text-base font-black text-slate-100 group-hover:text-amber-300 transition-colors">
+                      {schoolClass}
+                    </h3>
+
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      {selectedYear === 'ALL' ? 'كل السنوات' : selectedYear}
+                    </p>
+
+                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+                      <span className="text-slate-400">
+                        {selectedLevel === 'ALL' ? 'كل المراحل' : selectedLevel}
+                      </span>
+                      <span className="text-amber-400 font-bold">عرض الطلاب ←</span>
+                    </div>
+                  </button>
+                );
+              })}
+          </div>
+
+          {SCHOOL_CLASSES_FILTER.every((schoolClass) => {
+            const hasStudents = studentsList.some((s) =>
+              s.schoolClass === schoolClass &&
+              (selectedLevel === 'ALL' || s.level === selectedLevel) &&
+              (selectedYear === 'ALL' || s.year === selectedYear)
+            );
+            return !hasStudents;
+          }) && (
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-10 text-center text-slate-500">
+              <FolderOpen className="w-10 h-10 mx-auto text-slate-600 mb-3" />
+              <p className="text-sm">لا يوجد طلاب في الفصول المطابقة للسنة والمرحلة المحددة.</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -1001,7 +1024,7 @@ export const ClassesAndStudentsModule: React.FC<ClassesAndStudentsProps> = ({
                     onChange={(e) =>
                       setEditingStudent({ ...editingStudent, notes: e.target.value })
                     }
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-3 text-slate-100 focus:outline-none"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl px-3 py-2 text-slate-100 focus:outline-none resize-none"
                   />
                 </div>
               </div>
@@ -1009,14 +1032,17 @@ export const ClassesAndStudentsModule: React.FC<ClassesAndStudentsProps> = ({
               <div className="flex justify-end gap-2 pt-4 border-t border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setIsAddEditModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-medium"
+                  onClick={() => {
+                    setIsAddEditModalOpen(false);
+                    setEditingStudent(null);
+                  }}
+                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-all"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-md transition-all"
+                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-black transition-all"
                 >
                   حفظ البيانات
                 </button>
@@ -1026,21 +1052,17 @@ export const ClassesAndStudentsModule: React.FC<ClassesAndStudentsProps> = ({
         </div>
       )}
 
-      {/* Recycle Bin Modal (سلة المحذوفات) */}
+      {/* Recycle Bin Modal */}
       {isRecycleBinOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
             <div className="px-6 py-4 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/30">
-                  <Trash2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-100">سلة المحذوفات (Recycle Bin)</h3>
-                  <p className="text-xs text-slate-400">
-                    استعادة الطلاب المحذوفين مع الحفاظ المكتمل على كافة سجلات الحضور والدرجات التراكمية
-                  </p>
-                </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                  <ShieldAlert className="w-5 h-5 text-rose-400" />
+                  سلة المحذوفات
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-1">الطلاب المحذوفون مؤقتاً مع إمكانية الاستعادة أو الحذف النهائي.</p>
               </div>
               <button
                 onClick={() => setIsRecycleBinOpen(false)}
@@ -1050,96 +1072,84 @@ export const ClassesAndStudentsModule: React.FC<ClassesAndStudentsProps> = ({
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="p-5 overflow-y-auto space-y-3">
               {deletedList.length === 0 ? (
-                <div className="text-center py-12 text-slate-500 space-y-2">
-                  <FolderOpen className="w-10 h-10 mx-auto text-slate-600" />
-                  <p className="text-sm">سلة المحذوفات فارغة حالياً.</p>
+                <div className="py-12 text-center text-slate-500">
+                  <Trash2 className="w-12 h-12 mx-auto text-slate-700 mb-3" />
+                  لا يوجد طلاب في سلة المحذوفات.
                 </div>
               ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
-                  {deletedList.map((s) => (
-                    <div
-                      key={s.id}
-                      className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between gap-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={s.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
-                          alt={s.fullName}
-                          className="w-10 h-10 rounded-xl object-cover grayscale opacity-75"
-                        />
-                        <div>
-                          <span className="block font-bold text-slate-200 text-sm">
-                            {s.fullName}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            {s.studentCode} | {s.level} - {s.year}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {/* Restore */}
-                        <button
-                          onClick={() => handleRestore(s.id)}
-                          className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          إعادة وسحب السجلات
-                        </button>
-
-                        {/* Permanent Delete */}
-                        <button
-                          onClick={() => handlePermanentDelete(s.id)}
-                          className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          حذف نهائي
-                        </button>
+                deletedList.map((s) => (
+                  <div key={s.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={s.photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
+                        alt={s.fullName}
+                        className="w-11 h-11 rounded-xl object-cover shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-100 truncate">{s.fullName}</p>
+                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">{s.studentCode} • {s.level} • {s.year}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => handleRestore(s.id)}
+                        className="px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        استعادة
+                      </button>
+                      <button
+                        onClick={() => handlePermanentDelete(s.id)}
+                        className="px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        حذف نهائي
+                      </button>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </div>
         </div>
       )}
-      {/* GLOBAL CONFIRMATION MODAL */}
+
+      {/* Confirmation Modal */}
       {confirmModal?.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-5">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-rose-500/10 text-rose-400 rounded-2xl border border-rose-500/20">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full shadow-2xl p-6 space-y-5">
+            <div className="flex items-start gap-3">
+              <div className={`p-3 rounded-2xl ${confirmModal.isDanger ? 'bg-rose-500/10 text-rose-400' : 'bg-amber-500/10 text-amber-400'}`}>
                 <ShieldAlert className="w-6 h-6" />
               </div>
-              <div>
-                <h4 className="text-base font-bold text-slate-100">{confirmModal.title}</h4>
-                <p className="text-[11px] text-slate-400">تأكيد الإجراء في نظام الطلاب</p>
+              <div className="min-w-0">
+                <h3 className="text-base font-black text-slate-100">{confirmModal.title}</h3>
+                <p className="text-xs text-slate-400 mt-1 leading-6">{confirmModal.message}</p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed bg-slate-950 p-4 rounded-2xl border border-slate-800">
-              {confirmModal.message}
-            </p>
-
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold"
+              >
+                إلغاء
+              </button>
               <button
                 onClick={() => {
                   confirmModal.onConfirm();
                   setConfirmModal(null);
                 }}
-                className="flex-1 py-2.5 font-bold text-xs rounded-xl transition-all shadow-lg bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20"
+                className={`px-5 py-2.5 rounded-xl text-xs font-black ${
+                  confirmModal.isDanger
+                    ? 'bg-rose-500 hover:bg-rose-400 text-white'
+                    : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                }`}
               >
                 {confirmModal.confirmText || 'تأكيد'}
-              </button>
-
-              <button
-                onClick={() => setConfirmModal(null)}
-                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-all"
-              >
-                إلغاء
               </button>
             </div>
           </div>
