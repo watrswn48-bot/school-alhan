@@ -42,4 +42,7 @@ if (!cardButton.test(profile)) throw new Error('Profile ID card button not found
 profile = profile.replace(cardButton, (match) => `${match}\n\n              {session.mode !== 'student' && (\n                <button\n                  onClick={onClose}\n                  className="w-10 h-10 bg-slate-800 hover:bg-rose-500 hover:text-white text-slate-400 border border-slate-700 rounded-2xl transition-all flex items-center justify-center shadow-sm"\n                  aria-label="إغلاق الملف الشخصي"\n                  title="إغلاق"\n                >\n                  <X className="w-4 h-4" />\n                </button>\n              )}`);
 
 fs.writeFileSync(profilePath, profile);
-console.log('Restored visible طالب / مسئول labels and kept profile close/card buttons together.');
+
+// The school-class layer is part of the same verified build pipeline.
+await import('./fix-school-classes.mjs');
+console.log('Restored visible طالب / مسئول labels, kept profile close/card buttons together, and applied school classes.');
