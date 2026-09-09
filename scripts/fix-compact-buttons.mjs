@@ -25,5 +25,4 @@ const cardButton = /\s*<button\s*onClick=\{\(\) => onGenerateIDCard\(student\)\}
 if (cardButton.test(profile)) profile = profile.replace(cardButton, (match) => `${match}\n\n              {session.mode !== 'student' && (\n                <button onClick={onClose} className="w-10 h-10 bg-slate-800 hover:bg-rose-500 hover:text-white text-slate-400 border border-slate-700 rounded-2xl transition-all flex items-center justify-center shadow-sm" aria-label="إغلاق الملف الشخصي" title="إغلاق">\n                  <X className="w-4 h-4" />\n                </button>\n              )}`);
 fs.writeFileSync(profilePath, profile);
 
-await import('./fix-school-classes-safe.mjs');
-console.log('Compact buttons and school class layer applied.');
+console.log('Compact buttons applied.');
