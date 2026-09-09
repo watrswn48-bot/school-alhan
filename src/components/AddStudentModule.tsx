@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { GraduationCap, UserPlus, CheckCircle2, HardDrive } from 'lucide-react';
 import { DeaconRank, UserSession } from '../types';
-import { DEACON_RANKS, SCHOOL_LEVELS, SCHOOL_YEARS, getAcademicLevels, getAcademicYears, saveStudent } from '../services/storage';
+import { DEACON_RANKS, SCHOOL_CLASSES, SCHOOL_LEVELS, SCHOOL_YEARS, getAcademicLevels, getAcademicYears, saveStudent } from '../services/storage';
 
 interface Props { session: UserSession; onStudentSaved: (student: ReturnType<typeof saveStudent>) => void; }
 
@@ -20,7 +20,7 @@ export const AddStudentModule: React.FC<Props> = ({ session, onStudentSaved }) =
   const makeForm = () => ({
     fullName: '', photoUrl: '', deaconRank: 'إبصالتس' as DeaconRank,
     level: levels[0] || 'المستوى الأول', year: years[0] || 'السنة الأولى',
-    levelIndex: 0, yearIndex: 0, schoolLevel: SCHOOL_LEVELS[0] || '',
+    levelIndex: 0, yearIndex: 0, schoolClass: SCHOOL_CLASSES[0] as string, schoolLevel: SCHOOL_LEVELS[0] || '',
     schoolYear: SCHOOL_YEARS[0] || '', nationalId: '', phone: '', guardianPhone: '', notes: ''
   });
   const [form, setForm] = useState(makeForm);
@@ -36,7 +36,7 @@ export const AddStudentModule: React.FC<Props> = ({ session, onStudentSaved }) =
     if (!form.phone.trim() || !form.guardianPhone.trim()) {
       setError('هاتف الطالب وهاتف ولي الأمر بيانات إجبارية.'); return;
     }
-    if (!form.schoolLevel || !form.schoolYear || !form.level || !form.year || !form.deaconRank) {
+    if (!form.schoolLevel || !form.schoolYear || !form.schoolClass || !form.level || !form.year || !form.deaconRank) {
       setError('جميع بيانات المراحل والرتبة الدراسية إجبارية.'); return;
     }
     const photoUrl = normalizePhotoSource(form.photoUrl);
@@ -65,7 +65,7 @@ export const AddStudentModule: React.FC<Props> = ({ session, onStudentSaved }) =
         <div className="sm:col-span-2 pt-2 border-t border-slate-800"><span className="text-xs font-bold text-amber-400 block mb-2">🎓 بيانات مدرسة الشمامسة (بالخدمة):</span></div>
         <div><label className="label">المرحلة الدراسية بالخدمة (المستوى): <span className="req">*</span></label><select required value={form.level} onChange={e=>{const v=e.target.value;setForm(p=>({...p,level:v,levelIndex:Math.max(0,levels.indexOf(v))}))}} className="field">{levels.map(x=><option key={x}>{x}</option>)}</select></div>
         <div><label className="label">السنة الدراسية بالخدمة: <span className="req">*</span></label><select required value={form.year} onChange={e=>{const v=e.target.value;setForm(p=>({...p,year:v,yearIndex:Math.max(0,years.indexOf(v))}))}} className="field">{years.map(x=><option key={x}>{x}</option>)}</select></div>
-        <div className="sm:col-span-2 pt-2 border-t border-slate-800"><span className="text-xs font-bold text-sky-400 block mb-2">🏫 بيانات التعليم والمدرسة (المدرسة العادية):</span></div>
+        <div className="sm:col-span-2 pt-2 border-t border-slate-800"><span className="text-xs font-bold text-violet-400 block mb-2">📚 فصل مدرسة الألحان:</span></div><div><label className="label">الفصل: <span className="req">*</span></label><select required value={form.schoolClass} onChange={e=>set("schoolClass",e.target.value)} className="field">{SCHOOL_CLASSES.map(x=><option key={x}>{x}</option>)}</select></div><div className="sm:col-span-2 pt-2 border-t border-slate-800"><span className="text-xs font-bold text-sky-400 block mb-2">🏫 بيانات التعليم والمدرسة (المدرسة العادية):</span></div>
         <div><label className="label">المرحلة الدراسية بالمدرسة: <span className="req">*</span></label><select required value={form.schoolLevel} onChange={e=>set('schoolLevel',e.target.value)} className="field">{SCHOOL_LEVELS.map(x=><option key={x}>{x}</option>)}</select></div>
         <div><label className="label">السنة الدراسية بالمدرسة: <span className="req">*</span></label><select required value={form.schoolYear} onChange={e=>set('schoolYear',e.target.value)} className="field">{SCHOOL_YEARS.map(x=><option key={x}>{x}</option>)}</select></div>
         <div><label className="label">هاتف الطالب الشخصي: <span className="req">*</span></label><input required inputMode="tel" value={form.phone} onChange={e=>set('phone',e.target.value)} placeholder="01200000000" className="field font-mono"/></div>

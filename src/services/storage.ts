@@ -63,6 +63,9 @@ export const ACADEMIC_YEARS: AcademicYear[] = [
   'السنة الرابعة',
 ];
 
+export const SCHOOL_CLASSES = ['كيجي','أولى وتانية','تالتة ورابعة','خامسة وسادسة','إعدادي','ثانوي'] as const;
+export type SchoolClass = typeof SCHOOL_CLASSES[number];
+
 export const SCHOOL_LEVELS: string[] = [
   'المرحلة الابتدائية',
   'المرحلة الإعدادية',
@@ -375,6 +378,7 @@ export function migratePriestName() {
 }
 
 export async function initStorage(onDataUpdated?: () => void) {
+  migratePriestName();
   migratePriestName();
   migratePriestName();
   migratePriestName();

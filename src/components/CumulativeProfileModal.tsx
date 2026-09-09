@@ -270,12 +270,7 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
               </button>
 
               {session.mode !== 'student' && (
-                <button
-                  onClick={onClose}
-                  className="w-10 h-10 bg-slate-800 hover:bg-rose-500 hover:text-white text-slate-400 border border-slate-700 rounded-2xl transition-all flex items-center justify-center shadow-sm"
-                  aria-label="إغلاق الملف الشخصي"
-                  title="إغلاق"
-                >
+                <button onClick={onClose} className="w-10 h-10 bg-slate-800 hover:bg-rose-500 hover:text-white text-slate-400 border border-slate-700 rounded-2xl transition-all flex items-center justify-center shadow-sm" aria-label="إغلاق الملف الشخصي" title="إغلاق">
                   <X className="w-4 h-4" />
                 </button>
               )}

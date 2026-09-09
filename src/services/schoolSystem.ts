@@ -10,6 +10,7 @@ export interface ChantSubject {
   name: string;
   levelName: string;
   yearName: string;
+  schoolClass?: string;
   term: AcademicTerm;
   createdAt: string;
   createdBy: string;
@@ -95,14 +96,15 @@ export async function refreshSubjectsFromFirebase(): Promise<ChantSubject[]> {
 export async function saveChantSubject(input: Partial<ChantSubject>): Promise<ChantSubject> {
   const list = getChantSubjects();
   const name = (input.name || '').trim();
-  if (!name || !input.levelName || !input.yearName || !input.term) throw new Error('اسم المادة والسنة والترم بيانات مطلوبة.');
-  const duplicate = list.find(s => s.id !== input.id && s.name.trim() === name && s.levelName === input.levelName && s.yearName === input.yearName && s.term === input.term);
+  if (!name || !input.levelName || !input.yearName || !input.schoolClass || !input.term) throw new Error('اسم المادة والمستوى والسنة والفصل والترم بيانات مطلوبة.');
+  const duplicate = list.find(s => s.id !== input.id && s.name.trim() === name && s.levelName === input.levelName && s.yearName === input.yearName && s.schoolClass === input.schoolClass && s.term === input.term);
   if (duplicate) throw new Error('هذه المادة موجودة بالفعل لنفس السنة والترم.');
   const item: ChantSubject = {
     id: input.id || `sub-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     name,
     levelName: input.levelName,
     yearName: input.yearName,
+    schoolClass: input.schoolClass,
     term: input.term,
     createdAt: input.createdAt || new Date().toISOString(),
     createdBy: input.createdBy || 'الإدارة',
@@ -120,7 +122,7 @@ export async function deleteChantSubject(id: string) {
 }
 
 export function subjectsForStudent(student: Student, term: AcademicTerm): ChantSubject[] {
-  return getChantSubjects().filter(s => s.levelName === student.level && s.yearName === student.year && s.term === term);
+  return getChantSubjects().filter(s => s.levelName === student.level && s.yearName === student.year && s.schoolClass === student.schoolClass && s.term === term);
 }
 
 export function resultsForStudentTerm(studentId: string, levelIndex: number, yearIndex: number, term: AcademicTerm): AcademicSubjectResult[] {
@@ -128,7 +130,7 @@ export function resultsForStudentTerm(studentId: string, levelIndex: number, yea
 }
 
 export function chantYearPassStatus(student: Student): { passed: boolean; reason: string; required: number; completed: number } {
-  const requiredSubjects = getChantSubjects().filter(s => s.levelName === student.level && s.yearName === student.year);
+  const requiredSubjects = getChantSubjects().filter(s => s.levelName === student.level && s.yearName === student.year && s.schoolClass === student.schoolClass);
   if (!requiredSubjects.length) return { passed: false, reason: 'لا توجد مواد محددة لهذه السنة بعد.', required: 0, completed: 0 };
   const results = getSubjectResults(student.id).filter(r => r.levelIndex === student.levelIndex && r.yearIndex === student.yearIndex);
   let completed = 0;

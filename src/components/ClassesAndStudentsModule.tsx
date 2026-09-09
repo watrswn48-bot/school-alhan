@@ -41,6 +41,7 @@ import {
   DEACON_RANKS,
   SCHOOL_LEVELS,
   SCHOOL_YEARS,
+  SCHOOL_CLASSES,
 } from '../services/storage';
 
 interface ClassesAndStudentsProps {
@@ -68,6 +69,7 @@ export const ClassesAndStudentsModule: React.FC<ClassesAndStudentsProps> = ({
   // Filters
   const [selectedLevel, setSelectedLevel] = useState<string>('ALL');
   const [selectedYear, setSelectedYear] = useState<string>('ALL');
+  const [selectedClass, setSelectedClass] = useState<string>('ALL');
   const [selectedRank, setSelectedRank] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -100,6 +102,7 @@ export const ClassesAndStudentsModule: React.FC<ClassesAndStudentsProps> = ({
   const filteredStudents = studentsList.filter((s) => {
     if (selectedLevel !== 'ALL' && s.level !== selectedLevel) return false;
     if (selectedYear !== 'ALL' && s.year !== selectedYear) return false;
+    if (selectedClass !== 'ALL' && s.schoolClass !== selectedClass) return false;
     if (selectedRank !== 'ALL' && s.deaconRank !== selectedRank) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
