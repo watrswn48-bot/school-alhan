@@ -34,7 +34,7 @@ export const CurriculaModule: React.FC<CurriculaModuleProps> = ({ session, stude
   const [formTitle, setFormTitle] = useState('');
   const [formLevel, setFormLevel] = useState(studentLevel || academicLevels[0] || '');
   const [formYears, setFormYears] = useState<string[]>(studentYear ? [studentYear] : (academicYears[0] ? [academicYears[0]] : []));
-  const [formClass, setFormClass] = useState<string>(currentStudentClass || SCHOOL_CLASSES[0]);
+  const [formClasses, setFormClasses] = useState<string[]>(currentStudentClass ? [currentStudentClass] : [SCHOOL_CLASSES[0]]);
   const [formTerm, setFormTerm] = useState<AcademicTerm>('الترم الأول');
   const [formSubject, setFormSubject] = useState('');
   const [formMaterialType, setFormMaterialType] = useState<MaterialType>('pdf');
@@ -51,12 +51,12 @@ export const CurriculaModule: React.FC<CurriculaModuleProps> = ({ session, stude
 
   const availableSubjects = useMemo(() => Array.from(new Map(
     subjectsList
-      .filter(s => s.levelName === formLevel && s.yearName === primaryFormYear && s.schoolClass === formClass && s.term === formTerm)
+      .filter(s => s.levelName === formLevel && s.yearName === primaryFormYear && formClasses.includes(s.schoolClass || '') && s.term === formTerm)
       .map(s => [s.name, s])
-  ).values()), [subjectsList, formLevel, primaryFormYear, formClass, formTerm]);
+  ).values()), [subjectsList, formLevel, primaryFormYear, formClasses, formTerm]);
 
-  const syncSubjectForSelection = (level: string, year: string, schoolClass: string, term: AcademicTerm) => {
-    const found = subjectsList.find(s => s.levelName === level && s.yearName === year && s.schoolClass === schoolClass && s.term === term);
+  const syncSubjectForSelection = (level: string, year: string, schoolClasses: string[], term: AcademicTerm) => {
+    const found = subjectsList.find(s => s.levelName === level && s.yearName === year && schoolClasses.includes(s.schoolClass || '') && s.term === term);
     setFormSubject(found?.name || '');
   };
 
@@ -84,7 +84,7 @@ export const CurriculaModule: React.FC<CurriculaModuleProps> = ({ session, stude
     setFormTitle('');
     setFormLevel(studentLevel || academicLevels[0] || '');
     setFormYears(studentYear ? [studentYear] : (academicYears[0] ? [academicYears[0]] : []));
-    setFormClass(currentStudentClass || SCHOOL_CLASSES[0]);
+    setFormClasses(currentStudentClass ? [currentStudentClass] : [SCHOOL_CLASSES[0]]);
     setFormTerm('الترم الأول');
     setFormSubject('');
     setFormMaterialType('pdf');
@@ -97,10 +97,15 @@ export const CurriculaModule: React.FC<CurriculaModuleProps> = ({ session, stude
     setFormSubject('');
   };
 
+  const toggleFormClass = (schoolClass: string) => {
+    setFormClasses(current => current.includes(schoolClass) ? current.filter(c => c !== schoolClass) : [...current, schoolClass]);
+    setFormSubject('');
+  };
+
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canUpload) { setFeedbackMsg({ type: 'error', text: 'ليس لديك صلاحية رفع الملفات.' }); return; }
-    if (!formClass) { setFeedbackMsg({ type: 'error', text: 'اختر الفصل أولاً.' }); return; }
+    if (formClasses.length === 0) { setFeedbackMsg({ type: 'error', text: 'اختر فصلاً واحداً على الأقل.' }); return; }
     if (formYears.length === 0) { setFeedbackMsg({ type: 'error', text: 'اختر سنة دراسية واحدة على الأقل.' }); return; }
     if (!formSubject) { setFeedbackMsg({ type: 'error', text: 'اختر مادة من المواد المضافة في خانة إضافة المواد أولاً.' }); return; }
     if (!formTitle.trim()) { setFeedbackMsg({ type: 'error', text: 'يرجى كتابة العنوان.' }); return; }
@@ -109,16 +114,16 @@ export const CurriculaModule: React.FC<CurriculaModuleProps> = ({ session, stude
       const uploadedUrl = normalizeDriveUrl(formFileUrl.trim());
       if (!uploadedUrl) { setFeedbackMsg({ type: 'error', text: 'أدخل رابط ملف من Google Drive أولاً.' }); return; }
       const createdAt = new Date().toISOString();
-      formYears.forEach(yearName => {
+      formYears.forEach(yearName => formClasses.forEach(schoolClass => {
         saveCurriculum({
           title: formTitle.trim(), subject: formSubject, levelName: formLevel, yearName,
-          schoolClass: formClass, materialType: formMaterialType, fileUrl: uploadedUrl,
+          schoolClass, materialType: formMaterialType, fileUrl: uploadedUrl,
           contentNotes: formNotes.trim() || undefined, uploadedBy: session.fullName || 'إدارة المدرسة',
           uploadedById: session.userId || 'admin', createdAt
         });
-      });
+      }));
       refreshList(); setIsUploadModalOpen(false); resetForm();
-      setFeedbackMsg({ type: 'success', text: `تم ربط نفس المنهج بـ ${formYears.length} ${formYears.length === 1 ? 'سنة دراسية' : 'سنوات دراسية'} بنجاح.` });
+      setFeedbackMsg({ type: 'success', text: `تم ربط نفس المنهج بـ ${formYears.length} سنة و${formClasses.length} فصل بنجاح.` });
       setTimeout(() => setFeedbackMsg(null), 4000);
     } catch (err) {
       setFeedbackMsg({ type: 'error', text: `فشل حفظ المنهج: ${err instanceof Error ? err.message : 'تأكد من صحة الرابط.'}` });
@@ -142,12 +147,12 @@ export const CurriculaModule: React.FC<CurriculaModuleProps> = ({ session, stude
     </div>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{filteredCurricula.map(item => { const expanded = !!expandedNotesIds[item.id]; return <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col justify-between"><div className="space-y-3"><div className="flex justify-between"><span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300">{item.materialType}</span>{canManage && <button onClick={() => setDeleteConfirmId(item.id)} className="text-slate-500 hover:text-rose-400"><Trash2 className="w-3.5 h-3.5"/></button>}</div><h3 className="text-base font-black text-slate-100">{item.title}</h3><div className="flex gap-2 flex-wrap text-[11px] text-slate-400"><span className="px-2 py-0.5 bg-slate-950 rounded-md">{item.levelName}</span>{item.yearName && <span className="px-2 py-0.5 bg-slate-950 rounded-md">{item.yearName}</span>}{item.schoolClass && <span className="px-2 py-0.5 bg-slate-950 rounded-md">{item.schoolClass}</span>}</div>{item.contentNotes && <div className="bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-slate-300"><p className={expanded ? '' : 'line-clamp-3'}>{item.contentNotes}</p>{item.contentNotes.length > 90 && <button onClick={() => setExpandedNotesIds({ ...expandedNotesIds, [item.id]: !expanded })} className="text-[11px] text-amber-400 mt-1">{expanded ? 'طي النص' : 'عرض النص كاملاً'} {expanded ? <ChevronUp className="w-3 h-3 inline"/> : <ChevronDown className="w-3 h-3 inline"/>}</button>}</div>}</div><div className="mt-4 pt-3 border-t border-slate-800 flex items-center gap-2">{item.fileUrl && <a href={item.fileUrl} target="_blank" rel="noreferrer" className="px-3 py-2 bg-slate-800 text-sky-300 rounded-xl text-xs font-bold"><ExternalLink className="w-3.5 h-3.5 inline"/> فتح</a>}<span className="mr-auto text-[10px] text-slate-500"><User className="w-3 h-3 inline"/> {item.uploadedBy || 'الإدارة'}</span></div></div>; })}</div>
     {filteredCurricula.length === 0 && <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400">لم يتم العثور على مواد مطابقة.</div>}
-    {isUploadModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 overflow-y-auto"><div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl p-6 shadow-2xl"><div className="flex justify-between border-b border-slate-800 pb-4"><div><h3 className="text-lg font-black">رفع منهج جديد</h3><p className="text-xs text-slate-400 mt-1">يمكن ربط نفس الرابط بأكثر من سنة دراسية.</p></div><button onClick={() => setIsUploadModalOpen(false)}><X className="w-5 h-5 text-slate-400"/></button></div><form onSubmit={handleUploadSubmit} className="space-y-4 pt-4"><input required value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder="عنوان المنهج / اللحن" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"/>
+    {isUploadModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 overflow-y-auto"><div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl p-6 shadow-2xl"><div className="flex justify-between border-b border-slate-800 pb-4"><div><h3 className="text-lg font-black">رفع منهج جديد</h3><p className="text-xs text-slate-400 mt-1">يمكن ربط نفس المنهج بأكثر من سنة وفصل.</p></div><button onClick={() => setIsUploadModalOpen(false)}><X className="w-5 h-5 text-slate-400"/></button></div><form onSubmit={handleUploadSubmit} className="space-y-4 pt-4"><input required value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder="عنوان المنهج / اللحن" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"/>
       <select value={formLevel} onChange={e => { const v = e.target.value; setFormLevel(v); setFormSubject(''); }} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100">{academicLevels.map(l => <option key={l}>{l}</option>)}</select>
-      <div className="bg-slate-950 border border-amber-500/30 rounded-2xl p-3"><div className="text-xs font-black text-amber-300 mb-2">السنوات الدراسية للمنهج</div><div className="grid grid-cols-2 gap-2">{academicYears.map(year => <label key={year} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs cursor-pointer ${formYears.includes(year) ? 'bg-amber-500/15 border-amber-500/50 text-amber-200' : 'bg-slate-900 border-slate-800 text-slate-400'}`}><input type="checkbox" checked={formYears.includes(year)} onChange={() => toggleFormYear(year)} className="accent-amber-500"/>{year}</label>)}</div><p className="text-[10px] text-slate-500 mt-2">اختر سنة أو أكثر. سيتم حفظ نفس الملف بنفس المادة لكل السنوات المحددة.</p></div>
-      <div className="grid sm:grid-cols-2 gap-3"><select required value={formClass} onChange={e => { const v = e.target.value; setFormClass(v); setFormSubject(''); }} className="bg-slate-950 border border-amber-500/40 rounded-xl p-3 text-xs text-slate-100"><option value="">اختر الفصل</option>{SCHOOL_CLASSES.map(c => <option key={c}>{c}</option>)}</select><select value={formTerm} onChange={e => { const v = e.target.value as AcademicTerm; setFormTerm(v); syncSubjectForSelection(formLevel, primaryFormYear, formClass, v); }} className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"><option>الترم الأول</option><option>الترم الثاني</option></select></div>
-      <select required value={formSubject} onChange={e => setFormSubject(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"><option value="">اختر المادة المضافة لنفس المستوى والسنة والفصل والترم</option>{availableSubjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}</select>
-      <div className="flex items-center gap-2 text-[11px] text-slate-400 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2"><BookOpen className="w-4 h-4 text-amber-400 shrink-0"/>المادة تظهر هنا حسب أول سنة محددة. نفس المنهج يمكن ربطه بباقي السنوات المحددة.</div>
+      <div className="bg-slate-950 border border-amber-500/30 rounded-2xl p-3"><div className="text-xs font-black text-amber-300 mb-2">السنوات الدراسية للمنهج</div><div className="grid grid-cols-2 gap-2">{academicYears.map(year => <label key={year} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs cursor-pointer ${formYears.includes(year) ? 'bg-amber-500/15 border-amber-500/50 text-amber-200' : 'bg-slate-900 border-slate-800 text-slate-400'}`}><input type="checkbox" checked={formYears.includes(year)} onChange={() => toggleFormYear(year)} className="accent-amber-500"/>{year}</label>)}</div><p className="text-[10px] text-slate-500 mt-2">اختر سنة أو أكثر.</p></div>
+      <div className="bg-slate-950 border border-amber-500/30 rounded-2xl p-3"><div className="text-xs font-black text-amber-300 mb-2">الفصول التي ينطبق عليها المنهج</div><div className="grid grid-cols-2 gap-2">{SCHOOL_CLASSES.map(schoolClass => <label key={schoolClass} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs cursor-pointer ${formClasses.includes(schoolClass) ? 'bg-amber-500/15 border-amber-500/50 text-amber-200' : 'bg-slate-900 border-slate-800 text-slate-400'}`}><input type="checkbox" checked={formClasses.includes(schoolClass)} onChange={() => toggleFormClass(schoolClass)} className="accent-amber-500"/>{schoolClass}</label>)}</div><p className="text-[10px] text-slate-500 mt-2">مثال: اختر «تالتة ورابعة» + «خامسة وسادسة» + «إعدادي وثانوي» ليظهر نفس المنهج من رابعة حتى ثانوي.</p></div>
+      <div className="grid sm:grid-cols-2 gap-3"><select value={formTerm} onChange={e => { const v = e.target.value as AcademicTerm; setFormTerm(v); syncSubjectForSelection(formLevel, primaryFormYear, formClasses, v); }} className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"><option>الترم الأول</option><option>الترم الثاني</option></select><select required value={formSubject} onChange={e => setFormSubject(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"><option value="">اختر المادة المضافة لنفس المستوى/السنة/الفصل</option>{availableSubjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}</select></div>
+      <div className="flex items-center gap-2 text-[11px] text-slate-400 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2"><BookOpen className="w-4 h-4 text-amber-400 shrink-0"/>المادة تظهر من المواد المضافة حسب أول سنة وفصل مختارين، ويمكن ربط نفس المنهج بباقي السنوات والفصول المحددة.</div>
       <select value={formMaterialType} onChange={e => setFormMaterialType(e.target.value as MaterialType)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"><option value="audio">تسجيل صوتي</option><option value="pdf">PDF</option><option value="video">فيديو</option><option value="doc">مستند</option></select><input required type="url" value={formFileUrl} onChange={e => setFormFileUrl(e.target.value)} placeholder="رابط Google Drive للمنهج" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"/><textarea rows={4} value={formNotes} onChange={e => setFormNotes(e.target.value)} placeholder="ملاحظات / كلمات اللحن" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"/><div className="flex justify-end gap-2"><button type="button" onClick={() => setIsUploadModalOpen(false)} className="px-4 py-2 bg-slate-800 rounded-xl text-xs">إلغاء</button><button disabled={isSubmitting} className="px-6 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs">{isSubmitting ? 'جاري الحفظ...' : 'حفظ وربط المنهج'}</button></div></form></div></div>}
     {deleteConfirmId && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80"><div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm text-center"><Trash2 className="w-10 h-10 mx-auto text-rose-400 mb-3"/><h3 className="font-bold">تأكيد حذف المنهج</h3><p className="text-xs text-slate-400 my-4">الحذف متاح فقط لصاحب صلاحية إدارة المناهج.</p><div className="flex gap-2"><button onClick={() => setDeleteConfirmId(null)} className="flex-1 py-2 bg-slate-800 rounded-xl text-xs">إلغاء</button><button onClick={() => handleDelete(deleteConfirmId)} disabled={!canManage} className="flex-1 py-2 bg-rose-500 text-white rounded-xl text-xs disabled:opacity-40">حذف</button></div></div></div>}
   </div>;
