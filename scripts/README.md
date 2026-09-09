@@ -1,0 +1,1 @@
+Legacy patch scripts have been retired. Application source is committed directly and the Pages workflow is source-only.
