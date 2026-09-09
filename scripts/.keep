@@ -1,0 +1,1 @@
+The legacy patch scripts were removed. Application source is now committed directly and the Pages workflow performs only install, type-check, build, and deploy.
