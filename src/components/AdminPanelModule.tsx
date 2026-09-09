@@ -91,6 +91,7 @@ export const AdminPanelModule: React.FC<AdminPanelModuleProps> = ({ session }) =
     {activeAdminTab==='subjects' && <SubjectsManagementModule session={session} />}
     {activeAdminTab==='subjects' && <SubjectsManagementModule session={session} />}
     {activeAdminTab==='subjects' && <SubjectsManagementModule session={session} />}
+    {activeAdminTab==='subjects' && <SubjectsManagementModule session={session} />}
     {activeAdminTab==='graduates' && <GraduatesModule session={session} />}
     {activeAdminTab==='servants' && <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
       <div className="flex items-center gap-2 border-b border-slate-800 pb-4"><ShieldCheck className="w-5 h-5 text-amber-400"/><div><h3 className="text-base font-bold text-slate-100">أنواع الخدام والصلاحيات الفردية</h3><p className="text-[11px] text-slate-500">الأبونا يقدر يفتح أو يقفل أي صلاحية لأي خادم بشكل مستقل.</p></div></div>

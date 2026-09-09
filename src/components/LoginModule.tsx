@@ -170,7 +170,8 @@ export const LoginModule: React.FC<LoginModuleProps> = ({ onLoginSuccess }) => {
                 ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200'
             }`} aria-label="دخول الخدام والإدارة" title="الخدام والإدارة">
-            <ShieldCheck className="w-5 h-5" />
+            <ShieldCheck className="w-4 h-4" />
+            مسئول
           </button>
           <button
             onClick={() => {
@@ -182,7 +183,8 @@ export const LoginModule: React.FC<LoginModuleProps> = ({ onLoginSuccess }) => {
                 ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200'
             }`} aria-label="دخول الطالب وولي الأمر" title="الطالب وولي الأمر">
-            <User className="w-5 h-5" />
+            <User className="w-4 h-4" />
+            طالب
           </button>
         </div>
 
