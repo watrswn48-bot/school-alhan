@@ -1,91 +1,161 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { BookOpen, Music, FileText, Video, ExternalLink, Plus, Trash2, Search, Layers, Sparkles, X, ChevronDown, ChevronUp, User } from 'lucide-react';
 import { CurriculumMaterial, MaterialType, UserSession } from '../types';
 import { AcademicTerm, ChantSubject, getChantSubjects } from '../services/schoolSystem';
-import { SCHOOL_CLASSES, getCurricula, saveCurriculum, deleteCurriculum, getAcademicLevels, getAcademicYears } from '../services/storage';
+import { getStudents, getCurricula, saveCurriculum, deleteCurriculum, getAcademicLevels, getAcademicYears } from '../services/storage';
 import { sessionHasPermission } from '../services/permissions';
 import { normalizeDriveUrl } from '../services/mediaStorage';
 
-interface CurriculaModuleProps { session: UserSession; studentLevel?: string; studentYear?: string; isStudentPortal?: boolean; }
-const SUBJECT_OPTIONS=['الألحان والتسبيحة','اللغة القبطية','الطقس الكنسي','العقيدة والتاريخ','الكتاب المقدس واللاهوت','روحيات وخدمة الشماس','أخرى'];
+const SCHOOL_CLASSES = ['كيجي','أولى وتانية','تالتة ورابعة','خامسة وسادسة','إعدادي وثانوي'] as const;
 
-export const CurriculaModule: React.FC<CurriculaModuleProps> = ({session,studentLevel,studentYear,isStudentPortal=false})=>{
- const [curriculaList,setCurriculaList]=useState<CurriculumMaterial[]>(()=>getCurricula());
- const [searchTerm,setSearchTerm]=useState('');
- const [selectedSubject,setSelectedSubject]=useState('all');
- const [selectedLevel,setSelectedLevel]=useState(studentLevel||'all');
- const [selectedYear,setSelectedYear]=useState(studentYear||'all');
- const [selectedClass,setSelectedClass]=useState('all');
- const [selectedType,setSelectedType]=useState('all');
- const [onlyMyClass,setOnlyMyClass]=useState(!!studentLevel);
- const academicLevels=getAcademicLevels();
- const academicYears=getAcademicYears();
- const [isUploadModalOpen,setIsUploadModalOpen]=useState(false);
- const [subjectsList,setSubjectsList]=useState<ChantSubject[]>(()=>getChantSubjects());
- const [isSubmitting,setIsSubmitting]=useState(false);
- const [feedbackMsg,setFeedbackMsg]=useState<{type:'success'|'error';text:string}|null>(null);
- const [formTitle,setFormTitle]=useState('');
- const [formTerm,setFormTerm]=useState<AcademicTerm>('الترم الأول');
- const [formSubject,setFormSubject]=useState('');
- const [formLevel,setFormLevel]=useState(studentLevel||academicLevels[0]||'');
- const [formYear,setFormYear]=useState(studentYear||academicYears[0]||'');
- const [formMaterialType,setFormMaterialType]=useState<MaterialType>('pdf');
- const [formFileUrl,setFormFileUrl]=useState('');
- const [formNotes,setFormNotes]=useState('');
- const [expandedNotesIds,setExpandedNotesIds]=useState<Record<string,boolean>>({});
- const [deleteConfirmId,setDeleteConfirmId]=useState<string|null>(null);
- const isAdmin=session.role==='admin'||session.userId==='srv-admin-01';
- const canUpload=isAdmin||sessionHasPermission(session,'canUploadFiles')||sessionHasPermission(session,'canManageCurricula');
- const canManage=isAdmin||sessionHasPermission(session,'canManageCurricula');
- const refreshList=()=>setCurriculaList(getCurricula());
- const availableSubjects=Array.from(new Map(subjectsList.filter(s=>s.levelName===formLevel&&s.yearName===formYear&&s.term===formTerm).map(s=>[s.name,s])).values());
- const openUploadModal=()=>{setSubjectsList(getChantSubjects());setIsUploadModalOpen(true);};
- const syncSubjectForSelection=(level:string,year:string,term:AcademicTerm)=>{const found=subjectsList.find(s=>s.levelName===level&&s.yearName===year&&s.term===term);setFormSubject(found?.name||'');};
- const filteredCurricula=curriculaList.filter(item=>{
-  if(onlyMyClass&&studentLevel){
-   if(!((item.levelName==='لكل المستويات'||item.levelName===studentLevel)&&(!item.yearName||item.yearName==='لكل السنوات'||item.yearName===studentYear)))return false;
-  }else{
-   if(selectedLevel!=='all'&&item.levelName!=='لكل المستويات'&&item.levelName!==selectedLevel)return false;
-   if(selectedYear!=='all'&&item.yearName&&item.yearName!=='لكل السنوات'&&item.yearName!==selectedYear)return false;
-   if(selectedClass!=='all'&&item.schoolClass&&item.schoolClass!==selectedClass)return false;
-  }
-  if(selectedSubject!=='all'&&item.subject!==selectedSubject)return false;
-  if(selectedType!=='all'&&item.materialType!==selectedType)return false;
-  if(searchTerm.trim()){
-   const q=searchTerm.toLowerCase();
-   if(!item.title.toLowerCase().includes(q)&&!item.subject.toLowerCase().includes(q)&&!(item.contentNotes||'').toLowerCase().includes(q)&&!(item.fileName||'').toLowerCase().includes(q))return false;
-  }
-  return true;
- });
- const resetForm=()=>{setFormTitle('');setFormTerm('الترم الأول');setFormSubject('');setFormLevel(studentLevel||academicLevels[0]||'');setFormYear(studentYear||academicYears[0]||'');setFormMaterialType('pdf');setFormFileUrl('');setFormNotes('');};
- const handleUploadSubmit=async(e:React.FormEvent)=>{
-  e.preventDefault();
-  if(!canUpload){setFeedbackMsg({type:'error',text:'ليس لديك صلاحية رفع الملفات.'});return;}
-  if(!formSubject){setFeedbackMsg({type:'error',text:'اختر مادة من المواد المضافة في خانة إضافة المواد أولاً.'});return;}
-  if(!formTitle.trim()){setFeedbackMsg({type:'error',text:'يرجى كتابة العنوان'});return;}
-  setIsSubmitting(true);
-  try{
-   const uploadedUrl=normalizeDriveUrl(formFileUrl.trim());
-   if(!uploadedUrl){setFeedbackMsg({type:'error',text:'أدخل رابط ملف من Google Drive أولاً.'});setIsSubmitting(false);return;}
-   saveCurriculum({title:formTitle.trim(),subject:formSubject,levelName:formLevel,yearName:formYear,materialType:formMaterialType,fileUrl:uploadedUrl,contentNotes:formNotes.trim()||undefined,uploadedBy:session.fullName||'إدارة المدرسة',uploadedById:session.userId||'admin',createdAt:new Date().toISOString()});
-   refreshList();setIsUploadModalOpen(false);resetForm();setFeedbackMsg({type:'success',text:'تم حفظ رابط Google Drive ويمكن فتح المنهج للمشاهدة.'});setTimeout(()=>setFeedbackMsg(null),4000);
-  }catch(err){setFeedbackMsg({type:'error',text:`فشل حفظ المنهج: ${err instanceof Error?err.message:'تأكد من صحة الرابط واتصال الإنترنت.'}`});}
-  finally{setIsSubmitting(false);}
- };
- const handleDelete=(id:string)=>{if(!canManage){setFeedbackMsg({type:'error',text:'حذف المناهج متاح فقط لمن لديه صلاحية إدارة المناهج.'});return;}deleteCurriculum(id);setDeleteConfirmId(null);refreshList();};
- return <div className="space-y-6 animate-fade-in">
-  <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-   <div className="flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center"><BookOpen className="w-6 h-6"/></div><div><h2 className="text-xl font-black">مكتبة مناهج الشمامسة والألحان</h2><p className="text-xs text-slate-400 mt-1">{isStudentPortal?'شاهد المواد الخاصة بصفك':'إضافة وإدارة روابط المناهج والتسجيلات والمذكرات'}</p></div></div>
-   <div className="flex gap-3">{studentLevel&&<button onClick={()=>setOnlyMyClass(!onlyMyClass)} className={`px-4 py-2.5 rounded-2xl text-xs font-bold border ${onlyMyClass?'bg-amber-500 text-slate-950':'bg-slate-800 text-slate-300'}`}><Sparkles className="w-4 h-4 inline ml-2"/>مناهج صفي</button>}{canUpload&&!isStudentPortal&&<button onClick={openUploadModal} className="px-5 py-2.5 bg-amber-500 text-slate-950 font-black text-xs rounded-2xl flex items-center gap-2"><Plus className="w-4 h-4"/>رفع منهج أو لحن جديد</button>}</div>
-  </div>
-  {feedbackMsg&&<div className={`p-4 rounded-2xl border text-xs font-bold ${feedbackMsg.type==='success'?'bg-emerald-500/10 text-emerald-300 border-emerald-500/30':'bg-rose-500/10 text-rose-300 border-rose-500/30'}`}>{feedbackMsg.text}</div>}
-  <div className="bg-slate-950 border border-slate-800 rounded-3xl p-4 space-y-3">
-   <div className="flex flex-col md:flex-row gap-3"><div className="relative w-full md:w-80"><Search className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2"/><input value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} placeholder="ابحث..." className="w-full pl-3 pr-9 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl text-xs text-slate-100"/></div><div className="flex gap-1.5 overflow-x-auto">{[['all','الكل',Layers],['audio','الألحان',Music],['pdf','PDF',FileText],['video','فيديو',Video],['doc','مستند',BookOpen]].map(([id,label,Icon])=><button key={String(id)} onClick={()=>setSelectedType(String(id))} className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 ${selectedType===id?'bg-amber-500 text-slate-950':'bg-slate-900 text-slate-400 border border-slate-800'}`}>{React.createElement(Icon as any,{className:'w-3.5 h-3.5'})}{String(label)}</button>)}</div></div>
-   <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800"><select value={selectedLevel} disabled={onlyMyClass&&!!studentLevel} onChange={e=>setSelectedLevel(e.target.value)} className="bg-slate-900 text-xs text-slate-200 rounded-xl p-2"><option value="all">كافة المراحل</option>{academicLevels.map(l=><option key={l}>{l}</option>)}</select><select value={selectedYear} disabled={onlyMyClass&&!!studentYear} onChange={e=>setSelectedYear(e.target.value)} className="bg-slate-900 text-xs text-slate-200 rounded-xl p-2"><option value="all">كافة السنوات</option>{academicYears.map(y=><option key={y}>{y}</option>)}</select><select value={selectedClass} onChange={e=>setSelectedClass(e.target.value)} className="bg-slate-900 text-xs text-slate-200 rounded-xl p-2"><option value="all">كافة الفصول</option>{SCHOOL_CLASSES.map(c=><option key={c}>{c}</option>)}</select><select value={selectedSubject} onChange={e=>setSelectedSubject(e.target.value)} className="bg-slate-900 text-xs text-slate-200 rounded-xl p-2"><option value="all">كافة المواد</option>{SUBJECT_OPTIONS.map(s=><option key={s}>{s}</option>)}</select></div>
-  </div>
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{filteredCurricula.map(item=>{const expanded=!!expandedNotesIds[item.id];return <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col justify-between"><div className="space-y-3"><div className="flex justify-between"><span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300">{item.materialType}</span>{canManage&&<button onClick={()=>setDeleteConfirmId(item.id)} className="text-slate-500 hover:text-rose-400"><Trash2 className="w-3.5 h-3.5"/></button>}</div><h3 className="text-base font-black text-slate-100">{item.title}</h3><div className="flex gap-2 flex-wrap text-[11px] text-slate-400"><span className="px-2 py-0.5 bg-slate-950 rounded-md">{item.levelName}</span>{item.yearName&&<span className="px-2 py-0.5 bg-slate-950 rounded-md">{item.yearName}</span>}</div>{item.contentNotes&&<div className="bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-slate-300"><p className={expanded?'':'line-clamp-3'}>{item.contentNotes}</p>{item.contentNotes.length>90&&<button onClick={()=>setExpandedNotesIds({...expandedNotesIds,[item.id]:!expanded})} className="text-[11px] text-amber-400 mt-1">{expanded?'طي النص':'عرض النص كاملاً'} {expanded?<ChevronUp className="w-3 h-3 inline"/>:<ChevronDown className="w-3 h-3 inline"/>}</button>}</div>}</div><div className="mt-4 pt-3 border-t border-slate-800 flex items-center gap-2">{item.fileUrl&&<a href={item.fileUrl} target="_blank" rel="noreferrer" className="px-3 py-2 bg-slate-800 text-sky-300 rounded-xl text-xs font-bold"><ExternalLink className="w-3.5 h-3.5 inline"/> فتح</a>}<span className="mr-auto text-[10px] text-slate-500"><User className="w-3 h-3 inline"/> {item.uploadedBy||'الإدارة'}</span></div></div>})}</div>
-  {filteredCurricula.length===0&&<div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400">لم يتم العثور على مواد مطابقة.</div>}
-  {isUploadModalOpen&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 overflow-y-auto"><div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl p-6 shadow-2xl"><div className="flex justify-between border-b border-slate-800 pb-4"><h3 className="text-lg font-black">رفع منهج أو لحن جديد</h3><button onClick={()=>setIsUploadModalOpen(false)}><X className="w-5 h-5 text-slate-400"/></button></div><form onSubmit={handleUploadSubmit} className="space-y-4 pt-4"><input required value={formTitle} onChange={e=>setFormTitle(e.target.value)} placeholder="عنوان المنهج / اللحن" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"/><div className="grid sm:grid-cols-2 gap-3"><select value={formLevel} onChange={e=>{const v=e.target.value;setFormLevel(v);syncSubjectForSelection(v,formYear,formTerm);}} className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100">{academicLevels.map(l=><option key={l}>{l}</option>)}</select><select value={formYear} onChange={e=>{const v=e.target.value;setFormYear(v);syncSubjectForSelection(formLevel,v,formTerm);}} className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100">{academicYears.map(y=><option key={y}>{y}</option>)}</select></div><div className="grid sm:grid-cols-2 gap-3"><select value={formTerm} onChange={e=>{const v=e.target.value as AcademicTerm;setFormTerm(v);syncSubjectForSelection(formLevel,formYear,v);}} className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"><option>الترم الأول</option><option>الترم الثاني</option></select><select required value={formSubject} onChange={e=>setFormSubject(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"><option value="">اختر المادة المضافة من خانة إضافة المواد</option>{availableSubjects.map(s=><option key={s.id} value={s.name}>{s.name}</option>)}</select></div><div className="flex items-center gap-2 text-[11px] text-slate-400 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2"><BookOpen className="w-4 h-4 text-amber-400 shrink-0"/>المواد المعروضة هنا هي فقط المواد التي تم إنشاؤها من قسم «إضافة المواد» لنفس المستوى والسنة والترم.</div><select value={formMaterialType} onChange={e=>setFormMaterialType(e.target.value as MaterialType)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"><option value="audio">تسجيل صوتي</option><option value="pdf">PDF</option><option value="video">فيديو</option><option value="doc">مستند</option></select><input required type="url" value={formFileUrl} onChange={e=>setFormFileUrl(e.target.value)} placeholder="رابط Google Drive للمنهج" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"/><textarea rows={4} value={formNotes} onChange={e=>setFormNotes(e.target.value)} placeholder="ملاحظات / كلمات اللحن" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"/><div className="flex justify-end gap-2"><button type="button" onClick={()=>setIsUploadModalOpen(false)} className="px-4 py-2 bg-slate-800 rounded-xl text-xs">إلغاء</button><button disabled={isSubmitting} className="px-6 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs">{isSubmitting?'جاري الحفظ...':'حفظ رابط المنهج'}</button></div></form></div></div>}
-  {deleteConfirmId&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80"><div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm text-center"><Trash2 className="w-10 h-10 mx-auto text-rose-400 mb-3"/><h3 className="font-bold">تأكيد حذف المنهج</h3><p className="text-xs text-slate-400 my-4">الحذف متاح فقط لصاحب صلاحية إدارة المناهج.</p><div className="flex gap-2"><button onClick={()=>setDeleteConfirmId(null)} className="flex-1 py-2 bg-slate-800 rounded-xl text-xs">إلغاء</button><button onClick={()=>handleDelete(deleteConfirmId)} disabled={!canManage} className="flex-1 py-2 bg-rose-500 text-white rounded-xl text-xs disabled:opacity-40">حذف</button></div></div></div>}
- </div>;
+interface CurriculaModuleProps {
+  session: UserSession;
+  studentLevel?: string;
+  studentYear?: string;
+  isStudentPortal?: boolean;
+}
+
+export const CurriculaModule: React.FC<CurriculaModuleProps> = ({ session, studentLevel, studentYear, isStudentPortal = false }) => {
+  const [curriculaList, setCurriculaList] = useState<CurriculumMaterial[]>(() => getCurricula());
+  const [subjectsList, setSubjectsList] = useState<ChantSubject[]>(() => getChantSubjects());
+  const academicLevels = getAcademicLevels();
+  const academicYears = getAcademicYears();
+  const currentStudent = useMemo(() => {
+    if (!isStudentPortal) return undefined;
+    const students = getStudents();
+    return students.find(s => s.id === session.userId || s.studentCode === session.studentCode);
+  }, [isStudentPortal, session.userId, session.studentCode]);
+  const currentStudentClass = currentStudent?.schoolClass;
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('all');
+  const [selectedLevel, setSelectedLevel] = useState(studentLevel || 'all');
+  const [selectedYear, setSelectedYear] = useState(studentYear || 'all');
+  const [selectedClass, setSelectedClass] = useState('all');
+  const [selectedType, setSelectedType] = useState('all');
+  const [onlyMyClass, setOnlyMyClass] = useState(isStudentPortal || !!studentLevel);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [formTitle, setFormTitle] = useState('');
+  const [formLevel, setFormLevel] = useState(studentLevel || academicLevels[0] || '');
+  const [formYear, setFormYear] = useState(studentYear || academicYears[0] || '');
+  const [formClass, setFormClass] = useState<string>(currentStudentClass || SCHOOL_CLASSES[0]);
+  const [formTerm, setFormTerm] = useState<AcademicTerm>('الترم الأول');
+  const [formSubject, setFormSubject] = useState('');
+  const [formMaterialType, setFormMaterialType] = useState<MaterialType>('pdf');
+  const [formFileUrl, setFormFileUrl] = useState('');
+  const [formNotes, setFormNotes] = useState('');
+  const [expandedNotesIds, setExpandedNotesIds] = useState<Record<string, boolean>>({});
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const isAdmin = session.role === 'admin' || session.userId === 'srv-admin-01';
+  const canUpload = isAdmin || sessionHasPermission(session, 'canUploadFiles') || sessionHasPermission(session, 'canManageCurricula');
+  const canManage = isAdmin || sessionHasPermission(session, 'canManageCurricula');
+  const refreshList = () => setCurriculaList(getCurricula());
+
+  const availableSubjects = useMemo(() => Array.from(new Map(
+    subjectsList
+      .filter(s => s.levelName === formLevel && s.yearName === formYear && s.schoolClass === formClass && s.term === formTerm)
+      .map(s => [s.name, s])
+  ).values()), [subjectsList, formLevel, formYear, formClass, formTerm]);
+
+  const syncSubjectForSelection = (level: string, year: string, schoolClass: string, term: AcademicTerm) => {
+    const found = subjectsList.find(s => s.levelName === level && s.yearName === year && s.schoolClass === schoolClass && s.term === term);
+    setFormSubject(found?.name || '');
+  };
+
+  const filteredCurricula = curriculaList.filter(item => {
+    if (onlyMyClass && (studentLevel || isStudentPortal)) {
+      if (item.levelName !== 'لكل المستويات' && item.levelName !== studentLevel) return false;
+      if (item.yearName && item.yearName !== 'لكل السنوات' && item.yearName !== studentYear) return false;
+      if (currentStudentClass && item.schoolClass && item.schoolClass !== currentStudentClass) return false;
+      if (currentStudentClass && !item.schoolClass) return false;
+    } else {
+      if (selectedLevel !== 'all' && item.levelName !== 'لكل المستويات' && item.levelName !== selectedLevel) return false;
+      if (selectedYear !== 'all' && item.yearName && item.yearName !== 'لكل السنوات' && item.yearName !== selectedYear) return false;
+      if (selectedClass !== 'all' && item.schoolClass !== selectedClass) return false;
+    }
+    if (selectedSubject !== 'all' && item.subject !== selectedSubject) return false;
+    if (selectedType !== 'all' && item.materialType !== selectedType) return false;
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase();
+      if (!item.title.toLowerCase().includes(q) && !item.subject.toLowerCase().includes(q) && !(item.contentNotes || '').toLowerCase().includes(q) && !(item.fileName || '').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  const resetForm = () => {
+    setFormTitle('');
+    setFormLevel(studentLevel || academicLevels[0] || '');
+    setFormYear(studentYear || academicYears[0] || '');
+    setFormClass(currentStudentClass || SCHOOL_CLASSES[0]);
+    setFormTerm('الترم الأول');
+    setFormSubject('');
+    setFormMaterialType('pdf');
+    setFormFileUrl('');
+    setFormNotes('');
+  };
+
+  const handleUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canUpload) { setFeedbackMsg({ type: 'error', text: 'ليس لديك صلاحية رفع الملفات.' }); return; }
+    if (!formClass) { setFeedbackMsg({ type: 'error', text: 'اختر الفصل أولاً.' }); return; }
+    if (!formSubject) { setFeedbackMsg({ type: 'error', text: 'اختر مادة من المواد المضافة في خانة إضافة المواد أولاً.' }); return; }
+    if (!formTitle.trim()) { setFeedbackMsg({ type: 'error', text: 'يرجى كتابة العنوان.' }); return; }
+    setIsSubmitting(true);
+    try {
+      const uploadedUrl = normalizeDriveUrl(formFileUrl.trim());
+      if (!uploadedUrl) { setFeedbackMsg({ type: 'error', text: 'أدخل رابط ملف من Google Drive أولاً.' }); return; }
+      saveCurriculum({
+        title: formTitle.trim(), subject: formSubject, levelName: formLevel, yearName: formYear,
+        schoolClass: formClass, materialType: formMaterialType, fileUrl: uploadedUrl,
+        contentNotes: formNotes.trim() || undefined, uploadedBy: session.fullName || 'إدارة المدرسة',
+        uploadedById: session.userId || 'admin', createdAt: new Date().toISOString()
+      });
+      refreshList(); setIsUploadModalOpen(false); resetForm();
+      setFeedbackMsg({ type: 'success', text: 'تم حفظ المنهج وربطه بالفصل المحدد.' });
+      setTimeout(() => setFeedbackMsg(null), 4000);
+    } catch (err) {
+      setFeedbackMsg({ type: 'error', text: `فشل حفظ المنهج: ${err instanceof Error ? err.message : 'تأكد من صحة الرابط.'}` });
+    } finally { setIsSubmitting(false); }
+  };
+
+  const handleDelete = (id: string) => {
+    if (!canManage) { setFeedbackMsg({ type: 'error', text: 'حذف المناهج متاح فقط لمن لديه صلاحية إدارة المناهج.' }); return; }
+    deleteCurriculum(id); setDeleteConfirmId(null); refreshList();
+  };
+
+  return <div className="space-y-6 animate-fade-in">
+    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center"><BookOpen className="w-6 h-6"/></div>
+        <div><h2 className="text-xl font-black">مكتبة مناهج الشمامسة والألحان</h2><p className="text-xs text-slate-400 mt-1">{isStudentPortal ? 'المناهج الخاصة بالمستوى والسنة والفصل المحددين' : 'إضافة وإدارة روابط المناهج والمذكرات'}</p></div>
+      </div>
+      <div className="flex gap-3">
+        {(studentLevel || isStudentPortal) && <button onClick={() => setOnlyMyClass(!onlyMyClass)} className={`px-4 py-2.5 rounded-2xl text-xs font-bold border ${onlyMyClass ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300'}`}><Sparkles className="w-4 h-4 inline ml-2"/>مناهج صفي</button>}
+        {canUpload && !isStudentPortal && <button onClick={() => { setSubjectsList(getChantSubjects()); setIsUploadModalOpen(true); }} className="px-5 py-2.5 bg-amber-500 text-slate-950 font-black text-xs rounded-2xl flex items-center gap-2"><Plus className="w-4 h-4"/>رفع منهج جديد</button>}
+      </div>
+    </div>
+
+    {feedbackMsg && <div className={`p-4 rounded-2xl border text-xs font-bold ${feedbackMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/10 text-rose-300 border-rose-500/30'}`}>{feedbackMsg.text}</div>}
+
+    <div className="bg-slate-950 border border-slate-800 rounded-3xl p-4 space-y-3">
+      <div className="flex flex-col md:flex-row gap-3"><div className="relative w-full md:w-80"><Search className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2"/><input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="ابحث..." className="w-full pl-3 pr-9 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl text-xs text-slate-100"/></div>
+        <div className="flex gap-1.5 overflow-x-auto">{[['all','الكل',Layers],['audio','الألحان',Music],['pdf','PDF',FileText],['video','فيديو',Video],['doc','مستند',BookOpen]].map(([id,label,Icon]) => <button key={String(id)} onClick={() => setSelectedType(String(id))} className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 ${selectedType === id ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-slate-400 border border-slate-800'}`}>{React.createElement(Icon as any,{className:'w-3.5 h-3.5'})}{String(label)}</button>)}</div>
+      </div>
+      {!isStudentPortal && <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800"><select value={selectedLevel} onChange={e => setSelectedLevel(e.target.value)} className="bg-slate-900 text-xs text-slate-200 rounded-xl p-2"><option value="all">كافة المراحل</option>{academicLevels.map(l => <option key={l}>{l}</option>)}</select><select value={selectedYear} onChange={e => setSelectedYear(e.target.value)} className="bg-slate-900 text-xs text-slate-200 rounded-xl p-2"><option value="all">كافة السنوات</option>{academicYears.map(y => <option key={y}>{y}</option>)}</select><select value={selectedClass} onChange={e => setSelectedClass(e.target.value)} className="bg-slate-900 text-xs text-slate-200 rounded-xl p-2"><option value="all">كافة الفصول</option>{SCHOOL_CLASSES.map(c => <option key={c}>{c}</option>)}</select><select value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)} className="bg-slate-900 text-xs text-slate-200 rounded-xl p-2"><option value="all">كافة المواد</option>{Array.from(new Set(subjectsList.map(s => s.name))).map(s => <option key={s}>{s}</option>)}</select></div>}
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{filteredCurricula.map(item => { const expanded = !!expandedNotesIds[item.id]; return <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col justify-between"><div className="space-y-3"><div className="flex justify-between"><span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-800 text-slate-300">{item.materialType}</span>{canManage && <button onClick={() => setDeleteConfirmId(item.id)} className="text-slate-500 hover:text-rose-400"><Trash2 className="w-3.5 h-3.5"/></button>}</div><h3 className="text-base font-black text-slate-100">{item.title}</h3><div className="flex gap-2 flex-wrap text-[11px] text-slate-400"><span className="px-2 py-0.5 bg-slate-950 rounded-md">{item.levelName}</span>{item.yearName && <span className="px-2 py-0.5 bg-slate-950 rounded-md">{item.yearName}</span>}{item.schoolClass && <span className="px-2 py-0.5 bg-slate-950 rounded-md">{item.schoolClass}</span>}</div>{item.contentNotes && <div className="bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-slate-300"><p className={expanded ? '' : 'line-clamp-3'}>{item.contentNotes}</p>{item.contentNotes.length > 90 && <button onClick={() => setExpandedNotesIds({ ...expandedNotesIds, [item.id]: !expanded })} className="text-[11px] text-amber-400 mt-1">{expanded ? 'طي النص' : 'عرض النص كاملاً'} {expanded ? <ChevronUp className="w-3 h-3 inline"/> : <ChevronDown className="w-3 h-3 inline"/>}</button>}</div>}</div><div className="mt-4 pt-3 border-t border-slate-800 flex items-center gap-2">{item.fileUrl && <a href={item.fileUrl} target="_blank" rel="noreferrer" className="px-3 py-2 bg-slate-800 text-sky-300 rounded-xl text-xs font-bold"><ExternalLink className="w-3.5 h-3.5 inline"/> فتح</a>}<span className="mr-auto text-[10px] text-slate-500"><User className="w-3 h-3 inline"/> {item.uploadedBy || 'الإدارة'}</span></div></div>; })}</div>
+    {filteredCurricula.length === 0 && <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400">لم يتم العثور على مواد مطابقة.</div>}
+
+    {isUploadModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 overflow-y-auto"><div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl p-6 shadow-2xl"><div className="flex justify-between border-b border-slate-800 pb-4"><h3 className="text-lg font-black">رفع منهج جديد</h3><button onClick={() => setIsUploadModalOpen(false)}><X className="w-5 h-5 text-slate-400"/></button></div><form onSubmit={handleUploadSubmit} className="space-y-4 pt-4"><input required value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder="عنوان المنهج / اللحن" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"/>
+      <div className="grid sm:grid-cols-2 gap-3"><select value={formLevel} onChange={e => { const v = e.target.value; setFormLevel(v); syncSubjectForSelection(v, formYear, formClass, formTerm); }} className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100">{academicLevels.map(l => <option key={l}>{l}</option>)}</select><select value={formYear} onChange={e => { const v = e.target.value; setFormYear(v); syncSubjectForSelection(formLevel, v, formClass, formTerm); }} className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100">{academicYears.map(y => <option key={y}>{y}</option>)}</select></div>
+      <div className="grid sm:grid-cols-2 gap-3"><select required value={formClass} onChange={e => { const v = e.target.value; setFormClass(v); syncSubjectForSelection(formLevel, formYear, v, formTerm); }} className="bg-slate-950 border border-amber-500/40 rounded-xl p-3 text-xs text-slate-100"><option value="">اختر الفصل</option>{SCHOOL_CLASSES.map(c => <option key={c}>{c}</option>)}</select><select value={formTerm} onChange={e => { const v = e.target.value as AcademicTerm; setFormTerm(v); syncSubjectForSelection(formLevel, formYear, formClass, v); }} className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"><option>الترم الأول</option><option>الترم الثاني</option></select></div>
+      <select required value={formSubject} onChange={e => setFormSubject(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"><option value="">اختر المادة المضافة لنفس المستوى والسنة والفصل والترم</option>{availableSubjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}</select>
+      <div className="flex items-center gap-2 text-[11px] text-slate-400 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2"><BookOpen className="w-4 h-4 text-amber-400 shrink-0"/>المادة لا تظهر هنا إلا إذا كانت مضافة في «إضافة المواد» لنفس المستوى والسنة والفصل والترم.</div>
+      <select value={formMaterialType} onChange={e => setFormMaterialType(e.target.value as MaterialType)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"><option value="audio">تسجيل صوتي</option><option value="pdf">PDF</option><option value="video">فيديو</option><option value="doc">مستند</option></select><input required type="url" value={formFileUrl} onChange={e => setFormFileUrl(e.target.value)} placeholder="رابط Google Drive للمنهج" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"/><textarea rows={4} value={formNotes} onChange={e => setFormNotes(e.target.value)} placeholder="ملاحظات / كلمات اللحن" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100"/><div className="flex justify-end gap-2"><button type="button" onClick={() => setIsUploadModalOpen(false)} className="px-4 py-2 bg-slate-800 rounded-xl text-xs">إلغاء</button><button disabled={isSubmitting} className="px-6 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs">{isSubmitting ? 'جاري الحفظ...' : 'حفظ رابط المنهج'}</button></div></form></div></div>}
+    {deleteConfirmId && <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80"><div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm text-center"><Trash2 className="w-10 h-10 mx-auto text-rose-400 mb-3"/><h3 className="font-bold">تأكيد حذف المنهج</h3><p className="text-xs text-slate-400 my-4">الحذف متاح فقط لصاحب صلاحية إدارة المناهج.</p><div className="flex gap-2"><button onClick={() => setDeleteConfirmId(null)} className="flex-1 py-2 bg-slate-800 rounded-xl text-xs">إلغاء</button><button onClick={() => handleDelete(deleteConfirmId)} disabled={!canManage} className="flex-1 py-2 bg-rose-500 text-white rounded-xl text-xs disabled:opacity-40">حذف</button></div></div></div>}
+  </div>;
 };
