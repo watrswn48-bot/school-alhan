@@ -1,0 +1,12 @@
+/* ID card print styles are imported by the ID card component. */
+@media print {
+  @page { size: A4 portrait; margin: 0; }
+  body * { visibility: hidden !important; }
+  #printable-id-cards, #printable-id-cards * { visibility: visible !important; }
+  #printable-student-profile { display: none !important; visibility: hidden !important; }
+  #printable-id-cards { position: static !important; width: 100% !important; margin: 0 !important; padding: 0 !important; display: block !important; }
+  #printable-id-cards .id-card-page { width: 85.6mm !important; height: 54mm !important; min-height: 54mm !important; max-width: none !important; aspect-ratio: auto !important; margin: 0 auto !important; border-radius: 0 !important; box-shadow: none !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; break-inside: avoid !important; page-break-inside: avoid !important; }
+  #printable-id-cards .id-card-front { break-after: page !important; page-break-after: always !important; }
+  #printable-id-cards .id-card-back { break-before: page !important; page-break-before: always !important; }
+  .no-print { display: none !important; }
+}
