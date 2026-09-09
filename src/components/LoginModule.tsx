@@ -169,10 +169,8 @@ export const LoginModule: React.FC<LoginModuleProps> = ({ onLoginSuccess }) => {
               loginTab === 'servant'
                 ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <ShieldCheck className="w-4 h-4" />
-            الخدام والإدارة
+            }`} aria-label="دخول الخدام والإدارة" title="الخدام والإدارة">
+            <ShieldCheck className="w-5 h-5" />
           </button>
           <button
             onClick={() => {
@@ -183,10 +181,8 @@ export const LoginModule: React.FC<LoginModuleProps> = ({ onLoginSuccess }) => {
               loginTab === 'student'
                 ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
                 : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <User className="w-4 h-4" />
-            الطالب وولي الأمر
+            }`} aria-label="دخول الطالب وولي الأمر" title="الطالب وولي الأمر">
+            <User className="w-5 h-5" />
           </button>
         </div>
 
@@ -204,10 +200,8 @@ export const LoginModule: React.FC<LoginModuleProps> = ({ onLoginSuccess }) => {
             {/* Camera QR Button */}
             <button
               onClick={() => setIsScannerOpen(true)}
-              className="w-full py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-slate-950 font-black text-sm rounded-2xl shadow-lg shadow-amber-500/25 flex items-center justify-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99]"
-            >
+              className="w-full py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-slate-950 font-black text-sm rounded-2xl shadow-lg shadow-amber-500/25 flex items-center justify-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99]" aria-label="مسح QR" title="مسح QR">
               <QrCode className="w-5 h-5" />
-              مسح الـ QR Code عبر الكاميرا
             </button>
 
             <div className="relative flex items-center justify-center">
@@ -239,10 +233,8 @@ export const LoginModule: React.FC<LoginModuleProps> = ({ onLoginSuccess }) => {
               <button
                 type="submit"
                 disabled={!secretCodeInput.trim()}
-                className="w-full py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-100 font-bold text-xs rounded-2xl transition-all border border-slate-700 flex items-center justify-center gap-2"
-              >
-                دخول الخادم
-                <ArrowLeft className="w-4 h-4" />
+                className="w-full py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-100 font-bold text-xs rounded-2xl transition-all border border-slate-700 flex items-center justify-center gap-2" aria-label="دخول الخادم" title="دخول">
+                <ArrowLeft className="w-5 h-5" />
               </button>
             </form>
 
@@ -280,10 +272,8 @@ export const LoginModule: React.FC<LoginModuleProps> = ({ onLoginSuccess }) => {
             {/* Scan ID Card QR Code */}
             <button
               onClick={() => setIsScannerOpen(true)}
-              className="w-full py-4 bg-gradient-to-r from-sky-500 via-sky-600 to-sky-700 hover:from-sky-400 hover:to-sky-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-sky-500/25 flex items-center justify-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99]"
-            >
+              className="w-full py-4 bg-gradient-to-r from-sky-500 via-sky-600 to-sky-700 hover:from-sky-400 hover:to-sky-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-sky-500/25 flex items-center justify-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99]" aria-label="مسح QR" title="مسح QR">
               <QrCode className="w-5 h-5" />
-              مسح الـ QR Code لبطاقة الهوية
             </button>
 
             <div className="relative flex items-center justify-center">

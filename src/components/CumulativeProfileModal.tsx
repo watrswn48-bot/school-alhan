@@ -181,19 +181,7 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
               referrerPolicy="no-referrer"
             />
           </div>
-
-{session.mode !== 'student' && (
-            <button
-              onClick={onClose}
-              className="absolute left-3 top-3 sm:left-5 sm:top-5 z-30 w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-slate-800 border border-slate-700/60 rounded-2xl transition-colors no-print"
-              aria-label="إغلاق الملف الشخصي"
-              title="إغلاق"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 relative z-10">
+<div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 relative z-10">
             {/* Photo & QR Code */}
             <div className="relative group shrink-0">
               <img
@@ -280,6 +268,17 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
               >
                 <QrCode className="w-4 h-4" />
               </button>
+
+              {session.mode !== 'student' && (
+                <button
+                  onClick={onClose}
+                  className="w-10 h-10 bg-slate-800 hover:bg-rose-500 hover:text-white text-slate-400 border border-slate-700 rounded-2xl transition-all flex items-center justify-center shadow-sm"
+                  aria-label="إغلاق الملف الشخصي"
+                  title="إغلاق"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
