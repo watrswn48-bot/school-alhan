@@ -1,4 +1,7 @@
 /* ID card print styles are imported by the ID card component. */
+/* The profile report/print action is intentionally removed from the student profile UI. */
+#printable-student-profile button[aria-label="طباعة التقرير"] { display: none !important; }
+
 @media print {
   @page { size: A4 portrait; margin: 0; }
   body * { visibility: hidden !important; }
