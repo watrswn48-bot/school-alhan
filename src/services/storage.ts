@@ -395,13 +395,10 @@ export async function initStorage(onDataUpdated?: () => void) {
   migratePriestName();
   migratePriestName();
   migratePriestName();
+  migratePriestName();
   // Check if students exist locally, if not seed initial dataset
   const existingStudents = localStorage.getItem(STORAGE_KEYS.STUDENTS);
-  if (!existingStudents) {
-    seedInitialData();
-    // Automatically push seeded initial data to Firebase so Firestore has all records
-    syncAllToFirebase().catch((err) => console.warn('Initial cloud seed sync:', err));
-  }
+  // Demo data seeding is intentionally disabled.
 
   const existingCurricula = localStorage.getItem(STORAGE_KEYS.CURRICULA);
   if (!existingCurricula) {

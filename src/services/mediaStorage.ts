@@ -60,7 +60,7 @@ export function normalizeDriveUrl(value: string): string {
   const input = value.trim();
   if (!input) return '';
   const id = input.match(/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=|drive\.google\.com\/uc\?(?:[^#]*&)?id=)([a-zA-Z0-9_-]+)/)?.[1] || (input.length >= 20 && /^[a-zA-Z0-9_-]+$/.test(input) ? input : '');
-  return id ? `https://drive.google.com/uc?export=download&id=${id}` : input;
+  return id ? `https://drive.google.com/file/d/${id}/view` : input;
 }
 
 async function compressStudentPhoto(file: File): Promise<File> {
