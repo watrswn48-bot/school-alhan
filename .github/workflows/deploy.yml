@@ -48,6 +48,8 @@ jobs:
         run: node scripts/fix-academic-matrix.mjs
       - name: Apply school class layer
         run: node scripts/fix-school-classes-safe.mjs
+      - name: Apply curriculum upload class selector
+        run: node scripts/fix-curriculum-class-selector.mjs
       - name: Remove duplicate materials section from admin
         run: node scripts/fix-admin-duplicate-materials.mjs
       - name: Apply graduates management patch
@@ -77,7 +79,7 @@ jobs:
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/services/storage.ts src/services/schoolSystem.ts src/services/mediaStorage.ts src/components/ClassesAndStudentsModule.tsx src/components/AdminPanelModule.tsx src/components/GraduatesModule.tsx src/components/CurriculaModule.tsx src/components/LoginModule.tsx src/components/LectureSystemModule.tsx src/components/FridayLiturgyModule.tsx src/components/AnalyticsModule.tsx src/App.tsx src/components/AddStudentModule.tsx src/components/CumulativeProfileModal.tsx src/types/index.ts src/services/permissions.ts index.html scripts/fix-branding-footer.mjs scripts/fix-visibility-and-timezone.mjs scripts/fix-add-student-flow.mjs scripts/fix-card-persistence.mjs scripts/fix-student-national-id-profile.mjs scripts/fix-academic-matrix.mjs scripts/fix-admin-duplicate-materials.mjs scripts/fix-priest-name.mjs scripts/fix-graduates-management.mjs scripts/fix-student-profile-details.mjs scripts/fix-profile-registration-placement.mjs scripts/fix-storage-reliability.mjs scripts/fix-admin-profile-ui.mjs scripts/restore-profile-baseline.mjs scripts/fix-drive-curricula-view.mjs scripts/fix-build-and-demo-data.mjs scripts/fix-compact-buttons.mjs scripts/fix-school-classes.mjs scripts/fix-school-classes-safe.mjs src/services/egyptTime.ts
+            git add src/services/storage.ts src/services/schoolSystem.ts src/services/mediaStorage.ts src/components/ClassesAndStudentsModule.tsx src/components/AdminPanelModule.tsx src/components/GraduatesModule.tsx src/components/CurriculaModule.tsx src/components/LoginModule.tsx src/components/LectureSystemModule.tsx src/components/FridayLiturgyModule.tsx src/components/AnalyticsModule.tsx src/App.tsx src/components/AddStudentModule.tsx src/components/CumulativeProfileModal.tsx src/types/index.ts src/services/permissions.ts index.html scripts/fix-branding-footer.mjs scripts/fix-visibility-and-timezone.mjs scripts/fix-add-student-flow.mjs scripts/fix-card-persistence.mjs scripts/fix-student-national-id-profile.mjs scripts/fix-academic-matrix.mjs scripts/fix-admin-duplicate-materials.mjs scripts/fix-priest-name.mjs scripts/fix-graduates-management.mjs scripts/fix-student-profile-details.mjs scripts/fix-profile-registration-placement.mjs scripts/fix-storage-reliability.mjs scripts/fix-admin-profile-ui.mjs scripts/restore-profile-baseline.mjs scripts/fix-drive-curricula-view.mjs scripts/fix-build-and-demo-data.mjs scripts/fix-compact-buttons.mjs scripts/fix-school-classes.mjs scripts/fix-school-classes-safe.mjs scripts/fix-curriculum-class-selector.mjs src/services/egyptTime.ts
             git commit -m "chore: persist verified generated patches"
             git push origin HEAD:main
           fi
