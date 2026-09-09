@@ -27,6 +27,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Remove broken curriculum listen action
+        run: node scripts/fix-curriculum-open-only.mjs
       - name: TypeScript check
         run: npm run lint
       - name: Build
