@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { GraduationCap, UserPlus, CheckCircle2, HardDrive } from 'lucide-react';
 import { DeaconRank, UserSession } from '../types';
 import { DEACON_RANKS, SCHOOL_LEVELS, SCHOOL_YEARS, getAcademicLevels, getAcademicYears, saveStudent } from '../services/storage';
+import { currentSchoolAcademicYear } from '../services/academicYearService';
 
 const SCHOOL_CLASSES = ['كيجي','أولى وتانية','تالتة ورابعة','خامسة وسادسة','إعدادي وثانوي'] as const;
 
@@ -46,7 +47,17 @@ export const AddStudentModule: React.FC<Props> = ({ session, onStudentSaved }) =
     try {
       const levelIndex = Math.max(0, levels.indexOf(form.level));
       const yearIndex = Math.max(0, years.indexOf(form.year));
-      const student = saveStudent({ ...form, photoUrl, levelIndex, yearIndex, nationalId: form.nationalId.trim(), phone: form.phone.trim(), guardianPhone: form.guardianPhone.trim(), notes: form.notes.trim() });
+      const student = saveStudent({
+        ...form,
+        photoUrl,
+        levelIndex,
+        yearIndex,
+        schoolAcademicYear: currentSchoolAcademicYear(),
+        nationalId: form.nationalId.trim(),
+        phone: form.phone.trim(),
+        guardianPhone: form.guardianPhone.trim(),
+        notes: form.notes.trim()
+      } as Partial<import('../types').Student>);
       setSaved(`تم حفظ بيانات الطالب «${student.fullName}» بنجاح — كود الطالب: ${student.studentCode}`);
       onStudentSaved(student); setForm(makeForm());
     } catch (err) { setError(err instanceof Error ? err.message : 'تعذر حفظ الطالب.'); }
