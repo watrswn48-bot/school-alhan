@@ -51,6 +51,8 @@ import {
   ACADEMIC_YEARS,
   getSchoolLogo,
 } from '../services/storage';
+import { areResultsPublished } from '../services/academicYearService';
+import { AcademicTerm } from '../services/schoolSystem';
 
 interface CumulativeProfileModalProps {
   student: Student;
@@ -80,7 +82,8 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
   const [lectureLogs, setLectureLogs] = useState(() =>
     getLectureAttendances().filter((a) => a.studentId === student.id)
   );
-  const [subjectResults, setSubjectResults] = useState(() => getSubjectResults(student.id));
+  const visibleResults = () => getSubjectResults(student.id).filter((r) => session.mode !== 'student' || (!!r.term && areResultsPublished(r.levelName || student.level, r.yearName || student.year, r.term as AcademicTerm)));
+  const [subjectResults, setSubjectResults] = useState(() => visibleResults());
   const [behaviorNotes, setBehaviorNotes] = useState(() => getBehaviorNotes(student.id));
 
   // Add Note Form
@@ -143,7 +146,7 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
       updatedBy: session.fullName || 'الخادم',
     });
 
-    setSubjectResults(getSubjectResults(student.id));
+    setSubjectResults(visibleResults());
     setNewGradeNotes('');
     setShowAddGradeForm(false);
   };

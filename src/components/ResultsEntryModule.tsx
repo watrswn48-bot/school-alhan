@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ClipboardCheck, Save, ChevronLeft, Users, Folder, UserCheck } from 'lucide-react';
+import { ClipboardCheck, Save, ChevronLeft, Users, Folder, UserCheck, CheckCircle2 } from 'lucide-react';
 import { UserSession } from '../types';
 import { getStudents, getSubjectResults, saveSubjectResult } from '../services/storage';
 import { AcademicTerm, getChantSubjects, refreshSubjectsFromFirebase } from '../services/schoolSystem';
+import { publishResults, areResultsPublished } from '../services/academicYearService';
 import { sessionHasPermission } from '../services/permissions';
 
 const LEVELS = ['المستوى الأول', 'المستوى الثاني'];
@@ -19,8 +20,10 @@ export const ResultsEntryModule: React.FC<{ session: UserSession }> = ({ session
   const [version, setVersion] = useState(0);
   const [message, setMessage] = useState('');
   const [scores, setScores] = useState<Record<string, string>>({});
+  const [publicationVersion, setPublicationVersion] = useState(0);
 
   const canManage = session.role === 'admin' || session.userId === 'srv-admin-01' || sessionHasPermission(session, 'canManageGrades');
+  const resultsPublished = !!level && !!year && areResultsPublished(level, year, term);
 
   useEffect(() => {
     refreshSubjectsFromFirebase().then(() => setVersion(v => v + 1));
@@ -40,7 +43,7 @@ export const ResultsEntryModule: React.FC<{ session: UserSession }> = ({ session
   const subjects = useMemo(() => {
     if (!level || !year) return [];
     return getChantSubjects().filter(s => s.levelName === level && s.yearName === year && s.term === term);
-  }, [level, year, term, version]);
+  }, [level, year, term, version, publicationVersion]);
 
   const existing = useMemo(() => {
     if (!student) return [];
@@ -106,7 +109,7 @@ export const ResultsEntryModule: React.FC<{ session: UserSession }> = ({ session
         examType: 'نتيجة الترم',
         score,
         maxScore: 100,
-        isApproved: true,
+        isApproved: false,
         updatedBy: session.fullName || 'الإدارة',
       });
       saved++;
@@ -114,6 +117,13 @@ export const ResultsEntryModule: React.FC<{ session: UserSession }> = ({ session
 
     setVersion(v => v + 1);
     setMessage(`تم حفظ ${saved} نتيجة للطالب ${student.fullName} في ${term}.`);
+  };
+
+  const handlePublishResults = () => {
+    if (!canManage || !level || !year) return;
+    publishResults(level, year, term);
+    setPublicationVersion(v => v + 1);
+    setMessage(`تم رفع نتائج ${year} - ${term} للطلاب بنجاح.`);
   };
 
   const resetSelection = () => {
@@ -252,9 +262,14 @@ export const ResultsEntryModule: React.FC<{ session: UserSession }> = ({ session
               </div>
               <div className="p-4 border-t border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <span className="text-xs text-amber-300 min-h-5">{message}</span>
-                <button onClick={saveStudentResults} disabled={!canManage} className="px-5 py-2.5 bg-amber-500 text-slate-950 rounded-xl font-black text-sm flex items-center justify-center gap-2 disabled:opacity-40">
-                  <Save className="w-4 h-4" /> حفظ نتيجة {student.fullName}
-                </button>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <button onClick={saveStudentResults} disabled={!canManage} className="px-5 py-2.5 bg-slate-800 text-amber-300 border border-slate-700 rounded-xl font-black text-sm flex items-center justify-center gap-2 disabled:opacity-40">
+                    <Save className="w-4 h-4" /> حفظ نتيجة {student.fullName}
+                  </button>
+                  <button onClick={handlePublishResults} disabled={!canManage || resultsPublished} className="px-5 py-2.5 bg-emerald-500 text-slate-950 rounded-xl font-black text-sm flex items-center justify-center gap-2 disabled:opacity-40">
+                    <CheckCircle2 className="w-4 h-4" /> {resultsPublished ? 'النتائج مرفوعة' : 'رفع النتائج'}
+                  </button>
+                </div>
               </div>
             </>
           )}
