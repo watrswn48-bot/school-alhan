@@ -82,7 +82,7 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
   const [lectureLogs, setLectureLogs] = useState(() =>
     getLectureAttendances().filter((a) => a.studentId === student.id)
   );
-  const visibleResults = () => getSubjectResults(student.id).filter((r) => session.mode !== 'student' || (!!r.term && areResultsPublished(r.levelName || student.level, r.yearName || student.year, r.term as AcademicTerm)));
+  const visibleResults = () => getSubjectResults(student.id).filter((r) => session.mode !== 'student' || !!r.isApproved);
   const [subjectResults, setSubjectResults] = useState(() => visibleResults());
   const [behaviorNotes, setBehaviorNotes] = useState(() => getBehaviorNotes(student.id));
 
