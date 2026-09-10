@@ -20,22 +20,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Keep automatic chant promotion
+      - name: Finalize student result visibility
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('src/App.tsx')
+          p = Path('src/components/CumulativeProfileModal.tsx')
           s = p.read_text(encoding='utf-8')
-          s = s.replace("import { lecturesNeedingEvaluation } from './services/schoolSystem';", "import { lecturesNeedingEvaluation, runAutomaticAcademicTransition } from './services/schoolSystem';")
-          s = s.replace("const r=runAutomaticRegularSchoolPromotion();if(r.processed)setDataVersion(v=>v+1);", "const r=runAutomaticRegularSchoolPromotion();const chant=await runAutomaticAcademicTransition();if(r.processed||chant.processed)setDataVersion(v=>v+1);")
+          old = "const visibleResults = () => getSubjectResults(student.id).filter((r) => session.mode !== 'student' || (!!r.term && areResultsPublished(r.levelName || student.level, r.yearName || student.year, r.term as AcademicTerm)));"
+          new = "const visibleResults = () => getSubjectResults(student.id).filter((r) => session.mode !== 'student' || !!r.isApproved);"
+          s = s.replace(old, new)
           p.write_text(s, encoding='utf-8')
           PY
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/App.tsx
-            git commit -m "Keep automatic chant promotion"
+            git add src/components/CumulativeProfileModal.tsx
+            git commit -m "Sync published result visibility"
             git push
           fi
       - name: Setup Node.js
