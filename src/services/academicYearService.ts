@@ -1,5 +1,5 @@
 import { AcademicSubjectResult, Student } from '../types';
-import { getStudents, getSubjectResults, saveStudent } from './storage';
+import { getStudents, getSubjectResults, saveStudent, saveSubjectResult } from './storage';
 import { AcademicTerm, getChantSubjects } from './schoolSystem';
 
 const TRANSITION_KEY = 'deacon_system_regular_school_transition_v3';
@@ -42,9 +42,9 @@ export function runAutomaticRegularSchoolPromotion(force = false): { processed: 
   const current = currentSchoolAcademicYear();
   const last = localStorage.getItem(TRANSITION_KEY);
   if (!force && last === current) return { processed: false, advanced: 0 };
-
   const previous = last || previousSchoolAcademicYear(current);
   let advanced = 0;
+
   for (const original of getStudents(true).filter(s => !s.isDeleted)) {
     const studentAcademicYear = (original as Student & { schoolAcademicYear?: string }).schoolAcademicYear;
     const shouldAdvance = last ? studentAcademicYear !== current : true;
@@ -76,6 +76,13 @@ export function publishResults(level: string, year: string, term: AcademicTerm):
   const map = publicationMap();
   map[publicationKey(level, year, term)] = new Date().toISOString();
   localStorage.setItem(RESULT_PUBLICATION_KEY, JSON.stringify(map));
+
+  // Publication is stored on the result records themselves so it syncs to
+  // Firebase and is visible to students on other devices/accounts.
+  getSubjectResults().filter((r: AcademicSubjectResult) =>
+    (r.levelName || level) === level && (r.yearName || year) === year && r.term === term
+  ).forEach((r: AcademicSubjectResult) => saveSubjectResult({ ...r, isApproved: true }));
+
   window.dispatchEvent(new CustomEvent('deacon_results_published', { detail: { level, year, term } }));
 }
 
@@ -83,6 +90,9 @@ export function unpublishResults(level: string, year: string, term: AcademicTerm
   const map = publicationMap();
   delete map[publicationKey(level, year, term)];
   localStorage.setItem(RESULT_PUBLICATION_KEY, JSON.stringify(map));
+  getSubjectResults().filter((r: AcademicSubjectResult) =>
+    (r.levelName || level) === level && (r.yearName || year) === year && r.term === term
+  ).forEach((r: AcademicSubjectResult) => saveSubjectResult({ ...r, isApproved: false }));
   window.dispatchEvent(new CustomEvent('deacon_results_unpublished', { detail: { level, year, term } }));
 }
 
