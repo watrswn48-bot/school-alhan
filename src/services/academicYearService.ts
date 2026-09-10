@@ -1,6 +1,6 @@
-import { Student } from '../types';
-import { getStudents, saveStudent } from './storage';
-import { AcademicTerm, getChantSubjects, getSubjectResults } from './schoolSystem';
+import { AcademicSubjectResult, Student } from '../types';
+import { getStudents, getSubjectResults, saveStudent } from './storage';
+import { AcademicTerm, getChantSubjects } from './schoolSystem';
 
 const TRANSITION_KEY = 'deacon_system_regular_school_transition_v3';
 const RESULT_PUBLICATION_KEY = 'deacon_system_result_publication_v1';
@@ -47,8 +47,6 @@ export function runAutomaticRegularSchoolPromotion(force = false): { processed: 
   let advanced = 0;
   for (const original of getStudents(true).filter(s => !s.isDeleted)) {
     const studentAcademicYear = (original as Student & { schoolAcademicYear?: string }).schoolAcademicYear;
-    // First execution migrates existing students once. From then on, only
-    // students belonging to a previous academic year move forward.
     const shouldAdvance = last ? studentAcademicYear !== current : true;
     if (!shouldAdvance) continue;
 
@@ -92,8 +90,8 @@ export function areResultsPublished(level: string, year: string, term: AcademicT
   return !!publicationMap()[publicationKey(level, year, term)];
 }
 
-export function publishedResultsForStudent(student: Student) {
-  return getSubjectResults(student.id).filter(r => {
+export function publishedResultsForStudent(student: Student): AcademicSubjectResult[] {
+  return getSubjectResults(student.id).filter((r: AcademicSubjectResult) => {
     const level = r.levelName || student.level;
     const year = r.yearName || student.year;
     const term = r.term as AcademicTerm;
@@ -104,12 +102,12 @@ export function publishedResultsForStudent(student: Student) {
 export function studentPassedBothTerms(student: Student): { passed: boolean; reason: string } {
   const subjects = getChantSubjects().filter(s => s.levelName === student.level && s.yearName === student.year && s.schoolClass === student.schoolClass);
   if (!subjects.length) return { passed: false, reason: 'لا توجد مواد محددة لهذه السنة والفصل.' };
-  const results = getSubjectResults(student.id).filter(r => r.levelIndex === student.levelIndex && r.yearIndex === student.yearIndex);
+  const results: AcademicSubjectResult[] = getSubjectResults(student.id).filter((r: AcademicSubjectResult) => r.levelIndex === student.levelIndex && r.yearIndex === student.yearIndex);
   for (const term of ['الترم الأول', 'الترم الثاني'] as AcademicTerm[]) {
     const termSubjects = subjects.filter(s => s.term === term);
     if (!termSubjects.length) return { passed: false, reason: `لا توجد مواد محددة في ${term}.` };
     for (const subject of termSubjects) {
-      const result = results.find(r => r.subjectName === subject.name && r.term === term);
+      const result = results.find((r: AcademicSubjectResult) => r.subjectName === subject.name && r.term === term);
       if (!result) return { passed: false, reason: `لم تُرصد نتيجة ${subject.name} في ${term}.` };
       const pct = result.maxScore > 0 ? (result.score / result.maxScore) * 100 : 0;
       if (pct < 50) return { passed: false, reason: `الطالب أقل من 50% في ${subject.name} في ${term}.` };
