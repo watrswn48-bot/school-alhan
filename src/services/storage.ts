@@ -49,6 +49,7 @@ import {
 export { getSyncStatus, triggerFullSync };
 
 import defaultSchoolLogo from '../assets/images/deacon_school_logo_1788727828867.jpg';
+import { normalizeSchoolClass } from './schoolClassUtils';
 
 // Constants
 export const ACADEMIC_LEVELS: AcademicLevel[] = [
@@ -63,7 +64,7 @@ export const ACADEMIC_YEARS: AcademicYear[] = [
   'السنة الرابعة',
 ];
 
-export const SCHOOL_CLASSES = ['كيجي','أولى وتانية','تالتة ورابعة','خامسة وسادسة','إعدادي','ثانوي'] as const;
+export const SCHOOL_CLASSES = ['كيجي','أولى وتانية','تالتة ورابعة','خامسة وسادسة','إعدادي وثانوي'] as const;
 export type SchoolClass = typeof SCHOOL_CLASSES[number];
 
 export const SCHOOL_LEVELS: string[] = [
@@ -306,7 +307,7 @@ export function applyCloudDataToLocal(cloudData: any, onDataUpdated?: () => void
   if (cloudData.students && Array.isArray(cloudData.students) && cloudData.students.length > 0) {
     const currentStudents = getStudents(true);
     const mergedMap = new Map<string, Student>();
-    cloudData.students.forEach((s: Student) => mergedMap.set(s.id, s));
+    cloudData.students.forEach((s: Student) => mergedMap.set(s.id, { ...s, schoolClass: normalizeSchoolClass(s.schoolClass) }));
     // If local student has pending offline edits, keep local
     currentStudents.forEach((s) => {
       if (pendingEntityIds.has(s.id)) {
@@ -648,7 +649,8 @@ export function getStudents(includeDeleted = false): Student[] {
   if (!data) return [];
   try {
     const list: Student[] = JSON.parse(data);
-    return includeDeleted ? list : list.filter((s) => !s.isDeleted);
+    const normalized = list.map((s) => ({ ...s, schoolClass: normalizeSchoolClass(s.schoolClass) }));
+    return includeDeleted ? normalized : normalized.filter((s) => !s.isDeleted);
   } catch {
     return [];
   }
@@ -659,7 +661,7 @@ export function getDeletedStudents(): Student[] {
   if (!data) return [];
   try {
     const list: Student[] = JSON.parse(data);
-    return list.filter((s) => s.isDeleted);
+    return list.map((s) => ({ ...s, schoolClass: normalizeSchoolClass(s.schoolClass) })).filter((s) => s.isDeleted);
   } catch {
     return [];
   }
@@ -684,6 +686,9 @@ export function saveStudent(studentData: Partial<Student>): Student {
     const updated: Student = {
       ...list[existingIndex],
       ...studentData,
+      schoolClass: normalizeSchoolClass(studentData.schoolClass ?? list[existingIndex].schoolClass),
+      schoolLevel: studentData.schoolLevel ?? list[existingIndex].schoolLevel ?? '',
+      schoolYear: studentData.schoolYear ?? list[existingIndex].schoolYear ?? '',
     };
     list[existingIndex] = updated;
     localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(list));
@@ -707,6 +712,9 @@ export function saveStudent(studentData: Partial<Student>): Student {
       year: studentData.year || ACADEMIC_YEARS[yearIdx],
       levelIndex: levelIdx,
       yearIndex: yearIdx,
+      schoolClass: normalizeSchoolClass(studentData.schoolClass),
+      schoolLevel: studentData.schoolLevel || '',
+      schoolYear: studentData.schoolYear || '',
       phone: studentData.phone || '',
       guardianPhone: studentData.guardianPhone || '',
       notes: studentData.notes || '',
