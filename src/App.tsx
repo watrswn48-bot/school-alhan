@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Users, Church, BookOpen, BarChart3, Sliders, UserCheck, GraduationCap, LockKeyhole, BellRing, UserPlus } from 'lucide-react';
 import { UserSession, Student } from './types';
-import { initStorage, getStudents, getSchoolLogo, getServants, getLectures } from './services/storage';
+import { initStorage, getStudents, getSchoolLogo, getServants, getLectures, saveStudent } from './services/storage';
 import { normalizeRole, normalizeServantPermissions, sessionHasPermission } from './services/permissions';
 import { lecturesNeedingEvaluation, runAutomaticAcademicTransition } from './services/schoolSystem';
+import { normalizeSchoolClass } from './services/schoolClassUtils';
 import { Navbar } from './components/Navbar';
 import { LoginModule } from './components/LoginModule';
 import { ClassesAndStudentsModule } from './components/ClassesAndStudentsModule';
@@ -14,7 +15,6 @@ import { AnalyticsModule } from './components/AnalyticsModule';
 import { AdminPanelModule } from './components/AdminPanelModule';
 import { CurriculaModule } from './components/CurriculaModule';
 import { ResultsEntryModule } from './components/ResultsEntryModule';
-import { SubjectsManagementModule } from './components/SubjectsManagementModule';
 import { CumulativeProfileModal } from './components/CumulativeProfileModal';
 import { SmartIDCardModal } from './components/SmartIDCardModal';
 import { SiteFooter } from './components/SiteFooter';
@@ -36,6 +36,15 @@ export default function App() {
   useEffect(()=>{const f=()=>setSchoolLogo(getSchoolLogo());window.addEventListener('school_logo_updated',f);return()=>window.removeEventListener('school_logo_updated',f);},[]);
   useEffect(()=>{initStorage(()=>setDataVersion(v=>v+1)).then(async()=>{try{const r=await runAutomaticAcademicTransition();if(r.processed)setDataVersion(v=>v+1);}catch(e){console.warn('Academic transition:',e);}});},[]);
   useEffect(()=>{localStorage.setItem('deacon_system_session_v1',JSON.stringify(session));},[session]);
+
+  // One-time compatibility migration: old records used separate "إعدادي" / "ثانوي" classes.
+  useEffect(()=>{
+    try {
+      const legacyStudents=getStudents(true).filter(s=>s.schoolClass==='إعدادي'||s.schoolClass==='ثانوي');
+      legacyStudents.forEach(s=>saveStudent({...s,schoolClass:normalizeSchoolClass(s.schoolClass)}));
+      if(legacyStudents.length)setDataVersion(v=>v+1);
+    } catch(e) { console.warn('School class migration:',e); }
+  },[]);
 
   const normalizeSession=(incoming:UserSession):UserSession=>{if(incoming.mode!=='servant'||!incoming.userId)return incoming;const srv=getServants().find(s=>s.id===incoming.userId);const role=normalizeRole(srv?.role||incoming.role||(incoming.userId==='srv-admin-01'?'admin':'junior_servant'));return{...incoming,role,fullName:srv?.fullName||incoming.fullName,permissions:normalizeServantPermissions(role,srv?.permissions||incoming.permissions)};};
   const handleLoginSuccess=(s:UserSession)=>{const n=normalizeSession(s);setSession(n);if(n.mode==='student'){const st=getStudents().find(x=>x.id===n.userId||x.studentCode===n.studentCode);if(st)setSelectedStudentForProfile(st);}};
