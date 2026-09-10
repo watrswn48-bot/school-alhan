@@ -20,7 +20,6 @@ import { SmartIDCardModal } from './components/SmartIDCardModal';
 import { SiteFooter } from './components/SiteFooter';
 
 const SchoolBackgroundWatermark: React.FC<{ logo: string }> = ({ logo }) => <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center select-none"><div className="w-[500px] h-[500px] sm:w-[700px] sm:h-[700px] lg:w-[850px] lg:h-[850px] max-w-[90vw] max-h-[90vh] rounded-full overflow-hidden opacity-[0.16] border-4 border-amber-400/20 shadow-2xl transition-all duration-700"><img src={logo} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" /></div><div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.06)_0%,rgba(15,23,42,0)_70%)]" /></div>;
-
 type NavTab = 'class1'|'class2'|'class3'|'class4'|'class5'|'class6'|'class7'|'class8'|'admin';
 
 export default function App() {
@@ -34,19 +33,13 @@ export default function App() {
   const [newStudentIDCard,setNewStudentIDCard]=useState<Student|null>(null);
 
   useEffect(()=>{const f=()=>setSchoolLogo(getSchoolLogo());window.addEventListener('school_logo_updated',f);return()=>window.removeEventListener('school_logo_updated',f);},[]);
-  useEffect(()=>{initStorage(()=>setDataVersion(v=>v+1)).then(async()=>{try{const r=await runAutomaticAcademicTransition();if(r.processed)setDataVersion(v=>v+1);}catch(e){console.warn('Academic transition:',e);}});},[]);
+  useEffect(()=>{initStorage(()=>setDataVersion(v=>v+1)).then(async()=>{try{const legacy=getStudents(true).filter(s=>s.schoolClass==='إعدادي'||s.schoolClass==='ثانوي');legacy.forEach(s=>saveStudent({...s,schoolClass:normalizeSchoolClass(s.schoolClass)}));if(legacy.length)setDataVersion(v=>v+1);const r=await runAutomaticAcademicTransition();if(r.processed)setDataVersion(v=>v+1);}catch(e){console.warn('Startup migration/academic transition:',e);}});},[]);
   useEffect(()=>{localStorage.setItem('deacon_system_session_v1',JSON.stringify(session));},[session]);
-
-  // Compatibility migration for records created before the classes were combined.
-  useEffect(()=>{try{const legacy=getStudents(true).filter(s=>s.schoolClass==='إعدادي'||s.schoolClass==='ثانوي');legacy.forEach(s=>saveStudent({...s,schoolClass:normalizeSchoolClass(s.schoolClass)}));if(legacy.length)setDataVersion(v=>v+1);}catch(e){console.warn('School class migration:',e);}},[]);
-
-  // The old component still contains an obsolete "العودة للرئيسية" action. Remove it from the rendered UI.
   useEffect(()=>{const hide=()=>{document.querySelectorAll('button').forEach(b=>{if(b.textContent?.trim()==='العودة للرئيسية')b.remove();});};hide();const obs=new MutationObserver(hide);obs.observe(document.body,{childList:true,subtree:true});return()=>obs.disconnect();},[]);
 
   const normalizeSession=(incoming:UserSession):UserSession=>{if(incoming.mode!=='servant'||!incoming.userId)return incoming;const srv=getServants().find(s=>s.id===incoming.userId);const role=normalizeRole(srv?.role||incoming.role||(incoming.userId==='srv-admin-01'?'admin':'junior_servant'));return{...incoming,role,fullName:srv?.fullName||incoming.fullName,permissions:normalizeServantPermissions(role,srv?.permissions||incoming.permissions)};};
   const handleLoginSuccess=(s:UserSession)=>{const n=normalizeSession(s);setSession(n);if(n.mode==='student'){const st=getStudents().find(x=>x.id===n.userId||x.studentCode===n.studentCode);if(st)setSelectedStudentForProfile(st);}};
   const handleLogout=()=>{setSession({isLoggedIn:false,mode:'servant'});localStorage.removeItem('deacon_system_session_v1');setSelectedStudentForProfile(null);setSelectedStudentForIDCard(null);setNewStudentIDCard(null);setActiveNavTab('class1');};
-
   if(!session.isLoggedIn)return <LoginModule onLoginSuccess={handleLoginSuccess}/>;
   if(session.mode==='student'){
     const student=selectedStudentForProfile||getStudents().find(s=>s.id===session.userId||s.studentCode===session.studentCode);
