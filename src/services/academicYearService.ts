@@ -6,23 +6,9 @@ const TRANSITION_KEY = 'deacon_system_regular_school_transition_v3';
 const RESULT_PUBLICATION_KEY = 'deacon_system_result_publication_v1';
 
 const SCHOOL_YEARS_ORDER = [
-  'الصف الأول الابتدائي',
-  'الصف الثاني الابتدائي',
-  'الصف الثالث الابتدائي',
-  'الصف الرابع الابتدائي',
-  'الصف الخامس الابتدائي',
-  'الصف السادس الابتدائي',
-  'الصف الأول الإعدادي',
-  'الصف الثاني الإعدادي',
-  'الصف الثالث الإعدادي',
-  'الصف الأول الثانوي',
-  'الصف الثاني الثانوي',
-  'الصف الثالث الثانوي',
-  'الجامعة - السنة الأولى',
-  'الجامعة - السنة الثانية',
-  'الجامعة - السنة الثالثة',
-  'الجامعة - السنة الرابعة',
-  'خريج / أخرى',
+  'الصف الأول الابتدائي','الصف الثاني الابتدائي','الصف الثالث الابتدائي','الصف الرابع الابتدائي','الصف الخامس الابتدائي','الصف السادس الابتدائي',
+  'الصف الأول الإعدادي','الصف الثاني الإعدادي','الصف الثالث الإعدادي','الصف الأول الثانوي','الصف الثاني الثانوي','الصف الثالث الثانوي',
+  'الجامعة - السنة الأولى','الجامعة - السنة الثانية','الجامعة - السنة الثالثة','الجامعة - السنة الرابعة','خريج / أخرى',
 ];
 
 function schoolLevelForYear(year?: string): string | undefined {
@@ -52,55 +38,33 @@ function previousSchoolAcademicYear(academicYear: string): string {
   return Number.isFinite(start) ? `${start - 1}/${start}` : academicYear;
 }
 
-/**
- * Moves regular-school students exactly one school year when a new academic
- * year starts. This is independent from chant-school promotion and does not
- * check grades: regular school always advances one grade.
- */
 export function runAutomaticRegularSchoolPromotion(force = false): { processed: boolean; advanced: number } {
   const current = currentSchoolAcademicYear();
   const last = localStorage.getItem(TRANSITION_KEY);
-
   if (!force && last === current) return { processed: false, advanced: 0 };
 
-  // On the first run of this version, only students that clearly belong to an
-  // older school-year record are advanced. Newly created students are tagged
-  // with their registration academic year below and therefore stay put.
   const previous = last || previousSchoolAcademicYear(current);
   let advanced = 0;
-
   for (const original of getStudents(true).filter(s => !s.isDeleted)) {
     const studentAcademicYear = (original as Student & { schoolAcademicYear?: string }).schoolAcademicYear;
-    const shouldAdvance = studentAcademicYear ? studentAcademicYear !== current : !!last;
+    // First execution migrates existing students once. From then on, only
+    // students belonging to a previous academic year move forward.
+    const shouldAdvance = last ? studentAcademicYear !== current : true;
     if (!shouldAdvance) continue;
 
     const next = nextSchoolYear(original.schoolYear);
-    if (!next || next === original.schoolYear) continue;
+    if (!next || next === original.schoolYear) {
+      if (studentAcademicYear !== current) saveStudent({ ...original, schoolAcademicYear: current } as Partial<Student>);
+      continue;
+    }
 
     const annualHistory = Array.isArray((original as any).annualHistory) ? [...(original as any).annualHistory] : [];
     if (!annualHistory.some((h: any) => h.academicYear === previous)) {
-      annualHistory.push({
-        academicYear: previous,
-        schoolLevel: original.schoolLevel,
-        schoolYear: original.schoolYear,
-        chantLevel: original.level,
-        chantYear: original.year,
-        levelIndex: original.levelIndex,
-        yearIndex: original.yearIndex,
-        archivedAt: new Date().toISOString(),
-      });
+      annualHistory.push({ academicYear: previous, schoolLevel: original.schoolLevel, schoolYear: original.schoolYear, chantLevel: original.level, chantYear: original.year, levelIndex: original.levelIndex, yearIndex: original.yearIndex, archivedAt: new Date().toISOString() });
     }
-
-    saveStudent({
-      ...original,
-      schoolYear: next,
-      schoolLevel: schoolLevelForYear(next),
-      schoolAcademicYear: current,
-      annualHistory,
-    } as Partial<Student>);
+    saveStudent({ ...original, schoolYear: next, schoolLevel: schoolLevelForYear(next), schoolAcademicYear: current, annualHistory } as Partial<Student>);
     advanced++;
   }
-
   localStorage.setItem(TRANSITION_KEY, current);
   return { processed: true, advanced };
 }
@@ -108,10 +72,7 @@ export function runAutomaticRegularSchoolPromotion(force = false): { processed: 
 function publicationMap(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem(RESULT_PUBLICATION_KEY) || '{}'); } catch { return {}; }
 }
-
-function publicationKey(level: string, year: string, term: AcademicTerm): string {
-  return `${level}::${year}::${term}`;
-}
+function publicationKey(level: string, year: string, term: AcademicTerm): string { return `${level}::${year}::${term}`; }
 
 export function publishResults(level: string, year: string, term: AcademicTerm): void {
   const map = publicationMap();
@@ -140,11 +101,9 @@ export function publishedResultsForStudent(student: Student) {
   });
 }
 
-/** A full chant-year pass requires every configured subject in both terms. */
 export function studentPassedBothTerms(student: Student): { passed: boolean; reason: string } {
   const subjects = getChantSubjects().filter(s => s.levelName === student.level && s.yearName === student.year && s.schoolClass === student.schoolClass);
   if (!subjects.length) return { passed: false, reason: 'لا توجد مواد محددة لهذه السنة والفصل.' };
-
   const results = getSubjectResults(student.id).filter(r => r.levelIndex === student.levelIndex && r.yearIndex === student.yearIndex);
   for (const term of ['الترم الأول', 'الترم الثاني'] as AcademicTerm[]) {
     const termSubjects = subjects.filter(s => s.term === term);
