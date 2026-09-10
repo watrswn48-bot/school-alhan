@@ -3,7 +3,7 @@ import { Users, Church, BookOpen, BarChart3, Sliders, UserCheck, GraduationCap, 
 import { UserSession, Student } from './types';
 import { initStorage, getStudents, getSchoolLogo, getServants, getLectures, saveStudent } from './services/storage';
 import { normalizeRole, normalizeServantPermissions, sessionHasPermission } from './services/permissions';
-import { lecturesNeedingEvaluation } from './services/schoolSystem';
+import { lecturesNeedingEvaluation, runAutomaticAcademicTransition } from './services/schoolSystem';
 import { normalizeSchoolClass } from './services/schoolClassUtils';
 import { runAutomaticRegularSchoolPromotion } from './services/academicYearService';
 import { Navbar } from './components/Navbar';
@@ -34,7 +34,7 @@ export default function App() {
   const [newStudentIDCard,setNewStudentIDCard]=useState<Student|null>(null);
 
   useEffect(()=>{const f=()=>setSchoolLogo(getSchoolLogo());window.addEventListener('school_logo_updated',f);return()=>window.removeEventListener('school_logo_updated',f);},[]);
-  useEffect(()=>{initStorage(()=>setDataVersion(v=>v+1)).then(async()=>{try{const legacy=getStudents(true).filter(s=>s.schoolClass==='إعدادي'||s.schoolClass==='ثانوي');legacy.forEach(s=>saveStudent({...s,schoolClass:normalizeSchoolClass(s.schoolClass)}));if(legacy.length)setDataVersion(v=>v+1);const r=runAutomaticRegularSchoolPromotion();if(r.processed)setDataVersion(v=>v+1);}catch(e){console.warn('Startup migration/academic transition:',e);}});},[]);
+  useEffect(()=>{initStorage(()=>setDataVersion(v=>v+1)).then(async()=>{try{const legacy=getStudents(true).filter(s=>s.schoolClass==='إعدادي'||s.schoolClass==='ثانوي');legacy.forEach(s=>saveStudent({...s,schoolClass:normalizeSchoolClass(s.schoolClass)}));if(legacy.length)setDataVersion(v=>v+1);const r=runAutomaticRegularSchoolPromotion();const chant=await runAutomaticAcademicTransition();if(r.processed||chant.processed)setDataVersion(v=>v+1);}catch(e){console.warn('Startup migration/academic transition:',e);}});},[]);
   useEffect(()=>{localStorage.setItem('deacon_system_session_v1',JSON.stringify(session));},[session]);
   useEffect(()=>{const hide=()=>{document.querySelectorAll('button').forEach(b=>{if(b.textContent?.trim()==='العودة للرئيسية')b.remove();});};hide();const obs=new MutationObserver(hide);obs.observe(document.body,{childList:true,subtree:true});return()=>obs.disconnect();},[]);
 
