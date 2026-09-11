@@ -3,15 +3,14 @@ import { GraduationCap, UserPlus, CheckCircle2, HardDrive } from 'lucide-react';
 import { DeaconRank, UserSession } from '../types';
 import { DEACON_RANKS, SCHOOL_LEVELS, SCHOOL_YEARS, getAcademicLevels, getAcademicYears, getStudents, saveStudent } from '../services/storage';
 import { currentSchoolAcademicYear } from '../services/academicYearService';
-
-const SCHOOL_CLASSES = ['كيجي','أولى وتانية','تالتة ورابعة','خامسة وسادسة','إعدادي وثانوي'] as const;
+import { SCHOOL_CLASSES } from '../services/schoolClassUtils';
 
 interface Props { session: UserSession; onStudentSaved: (student: ReturnType<typeof saveStudent>) => void; }
 
 function normalizePhotoSource(value: string): string {
   const input = value.trim();
   if (!input) return '';
-  const driveId = input.match(/(?:drive\\.google\\.com\\/file\\/d\\/|drive\\.google\\.com\\/open\\?id=|drive\\.google\\.com\\/uc\\?(?:[^#]*&)?id=)([a-zA-Z0-9_-]+)/)?.[1]
+  const driveId = input.match(/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=|drive\.google\.com\/uc\?(?:[^#]*&)?id=)([a-zA-Z0-9_-]+)/)?.[1]
     || (input.length >= 20 && /^[a-zA-Z0-9_-]+$/.test(input) ? input : '');
   return driveId ? `https://drive.google.com/thumbnail?id=${driveId}&sz=w1200` : input;
 }
@@ -20,7 +19,7 @@ function nextUniqueStudentCode(students: ReturnType<typeof getStudents>): string
   const used = new Set(students.map(s => s.studentCode.trim().toLowerCase()));
   let max = 0;
   for (const code of used) {
-    const match = code.match(/^stu-\\d{4}-(\\d+)$/i);
+    const match = code.match(/^stu-\d{4}-(\d+)$/i);
     if (match) max = Math.max(max, Number(match[1]) || 0);
   }
   let n = Math.max(students.length, max) + 1;
