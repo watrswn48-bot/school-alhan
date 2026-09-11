@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { GraduationCap, UserPlus, CheckCircle2, HardDrive } from 'lucide-react';
 import { DeaconRank, UserSession } from '../types';
-import { DEACON_RANKS, SCHOOL_LEVELS, SCHOOL_YEARS, getAcademicLevels, getAcademicYears, saveStudent } from '../services/storage';
+import { DEACON_RANKS, SCHOOL_LEVELS, SCHOOL_YEARS, getAcademicLevels, getAcademicYears, getStudents, saveStudent } from '../services/storage';
 import { currentSchoolAcademicYear } from '../services/academicYearService';
 
 const SCHOOL_CLASSES = ['كيجي','أولى وتانية','تالتة ورابعة','خامسة وسادسة','إعدادي وثانوي'] as const;
@@ -11,9 +11,25 @@ interface Props { session: UserSession; onStudentSaved: (student: ReturnType<typ
 function normalizePhotoSource(value: string): string {
   const input = value.trim();
   if (!input) return '';
-  const driveId = input.match(/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=|drive\.google\.com\/uc\?(?:[^#]*&)?id=)([a-zA-Z0-9_-]+)/)?.[1]
+  const driveId = input.match(/(?:drive\\.google\\.com\\/file\\/d\\/|drive\\.google\\.com\\/open\\?id=|drive\\.google\\.com\\/uc\\?(?:[^#]*&)?id=)([a-zA-Z0-9_-]+)/)?.[1]
     || (input.length >= 20 && /^[a-zA-Z0-9_-]+$/.test(input) ? input : '');
   return driveId ? `https://drive.google.com/thumbnail?id=${driveId}&sz=w1200` : input;
+}
+
+function nextUniqueStudentCode(students: ReturnType<typeof getStudents>): string {
+  const used = new Set(students.map(s => s.studentCode.trim().toLowerCase()));
+  let max = 0;
+  for (const code of used) {
+    const match = code.match(/^stu-\\d{4}-(\\d+)$/i);
+    if (match) max = Math.max(max, Number(match[1]) || 0);
+  }
+  let n = Math.max(students.length, max) + 1;
+  let candidate = `STU-${new Date().getFullYear()}-${String(n).padStart(3, '0')}`;
+  while (used.has(candidate.toLowerCase())) {
+    n += 1;
+    candidate = `STU-${new Date().getFullYear()}-${String(n).padStart(3, '0')}`;
+  }
+  return candidate;
 }
 
 export const AddStudentModule: React.FC<Props> = ({ session, onStudentSaved }) => {
@@ -42,6 +58,11 @@ export const AddStudentModule: React.FC<Props> = ({ session, onStudentSaved }) =
     if (!form.schoolLevel || !form.schoolYear || !form.schoolClass || !form.level || !form.year || !form.deaconRank) {
       setError('جميع بيانات المراحل والرتبة الدراسية إجبارية.'); return;
     }
+    const existingStudents = getStudents(true);
+    const duplicateNationalId = existingStudents.find(s => !s.isDeleted && s.nationalId.trim() === form.nationalId.trim());
+    if (duplicateNationalId) {
+      setError(`الرقم القومي مسجل بالفعل باسم «${duplicateNationalId.fullName}».`); return;
+    }
     const photoUrl = normalizePhotoSource(form.photoUrl);
     if (!photoUrl) { setError('الصورة الشخصية إجبارية: أدخل رابط الصورة أو كود Google Drive.'); return; }
     try {
@@ -49,6 +70,7 @@ export const AddStudentModule: React.FC<Props> = ({ session, onStudentSaved }) =
       const yearIndex = Math.max(0, years.indexOf(form.year));
       const student = saveStudent({
         ...form,
+        studentCode: nextUniqueStudentCode(existingStudents),
         photoUrl,
         levelIndex,
         yearIndex,
