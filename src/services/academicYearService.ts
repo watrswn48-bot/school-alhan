@@ -2,126 +2,17 @@ import { AcademicSubjectResult, Student } from '../types';
 import { getStudents, getSubjectResults, saveStudent, saveSubjectResult } from './storage';
 import { AcademicTerm, getChantSubjects } from './schoolSystem';
 
-const TRANSITION_KEY = 'deacon_system_regular_school_transition_v3';
-const RESULT_PUBLICATION_KEY = 'deacon_system_result_publication_v1';
-
-const SCHOOL_YEARS_ORDER = [
-  'الصف الأول الابتدائي','الصف الثاني الابتدائي','الصف الثالث الابتدائي','الصف الرابع الابتدائي','الصف الخامس الابتدائي','الصف السادس الابتدائي',
-  'الصف الأول الإعدادي','الصف الثاني الإعدادي','الصف الثالث الإعدادي','الصف الأول الثانوي','الصف الثاني الثانوي','الصف الثالث الثانوي',
-  'الجامعة - السنة الأولى','الجامعة - السنة الثانية','الجامعة - السنة الثالثة','الجامعة - السنة الرابعة','خريج / أخرى',
-];
-
-function schoolLevelForYear(year?: string): string | undefined {
-  if (!year) return undefined;
-  if (year.includes('الابتدائي')) return 'المرحلة الابتدائية';
-  if (year.includes('الإعدادي')) return 'المرحلة الإعدادية';
-  if (year.includes('الثانوي')) return 'المرحلة الثانوية';
-  if (year.includes('الجامعة')) return 'المرحلة الجامعية';
-  return 'خريج / أخرى';
-}
-
-export function currentSchoolAcademicYear(date = new Date()): string {
-  const y = date.getFullYear();
-  const start = date.getMonth() >= 8 ? y : y - 1;
-  return `${start}/${start + 1}`;
-}
-
-export function nextSchoolYear(year?: string): string | undefined {
-  if (!year) return undefined;
-  const index = SCHOOL_YEARS_ORDER.indexOf(year);
-  if (index < 0 || index >= SCHOOL_YEARS_ORDER.length - 1) return year;
-  return SCHOOL_YEARS_ORDER[index + 1];
-}
-
-function previousSchoolAcademicYear(academicYear: string): string {
-  const start = Number(academicYear.split('/')[0]);
-  return Number.isFinite(start) ? `${start - 1}/${start}` : academicYear;
-}
-
-export function runAutomaticRegularSchoolPromotion(force = false): { processed: boolean; advanced: number } {
-  const current = currentSchoolAcademicYear();
-  const last = localStorage.getItem(TRANSITION_KEY);
-  if (!force && last === current) return { processed: false, advanced: 0 };
-  const previous = last || previousSchoolAcademicYear(current);
-  let advanced = 0;
-
-  for (const original of getStudents(true).filter(s => !s.isDeleted)) {
-    const studentAcademicYear = (original as Student & { schoolAcademicYear?: string }).schoolAcademicYear;
-    const shouldAdvance = last ? studentAcademicYear !== current : true;
-    if (!shouldAdvance) continue;
-
-    const next = nextSchoolYear(original.schoolYear);
-    if (!next || next === original.schoolYear) {
-      if (studentAcademicYear !== current) saveStudent({ ...original, schoolAcademicYear: current } as Partial<Student>);
-      continue;
-    }
-
-    const annualHistory = Array.isArray((original as any).annualHistory) ? [...(original as any).annualHistory] : [];
-    if (!annualHistory.some((h: any) => h.academicYear === previous)) {
-      annualHistory.push({ academicYear: previous, schoolLevel: original.schoolLevel, schoolYear: original.schoolYear, chantLevel: original.level, chantYear: original.year, levelIndex: original.levelIndex, yearIndex: original.yearIndex, archivedAt: new Date().toISOString() });
-    }
-    saveStudent({ ...original, schoolYear: next, schoolLevel: schoolLevelForYear(next), schoolAcademicYear: current, annualHistory } as Partial<Student>);
-    advanced++;
-  }
-  localStorage.setItem(TRANSITION_KEY, current);
-  return { processed: true, advanced };
-}
-
-function publicationMap(): Record<string, string> {
-  try { return JSON.parse(localStorage.getItem(RESULT_PUBLICATION_KEY) || '{}'); } catch { return {}; }
-}
-function publicationKey(level: string, year: string, term: AcademicTerm): string { return `${level}::${year}::${term}`; }
-
-export function publishResults(level: string, year: string, term: AcademicTerm): void {
-  const map = publicationMap();
-  map[publicationKey(level, year, term)] = new Date().toISOString();
-  localStorage.setItem(RESULT_PUBLICATION_KEY, JSON.stringify(map));
-
-  // Publication is stored on the result records themselves so it syncs to
-  // Firebase and is visible to students on other devices/accounts.
-  getSubjectResults().filter((r: AcademicSubjectResult) =>
-    (r.levelName || level) === level && (r.yearName || year) === year && r.term === term
-  ).forEach((r: AcademicSubjectResult) => saveSubjectResult({ ...r, isApproved: true }));
-
-  window.dispatchEvent(new CustomEvent('deacon_results_published', { detail: { level, year, term } }));
-}
-
-export function unpublishResults(level: string, year: string, term: AcademicTerm): void {
-  const map = publicationMap();
-  delete map[publicationKey(level, year, term)];
-  localStorage.setItem(RESULT_PUBLICATION_KEY, JSON.stringify(map));
-  getSubjectResults().filter((r: AcademicSubjectResult) =>
-    (r.levelName || level) === level && (r.yearName || year) === year && r.term === term
-  ).forEach((r: AcademicSubjectResult) => saveSubjectResult({ ...r, isApproved: false }));
-  window.dispatchEvent(new CustomEvent('deacon_results_unpublished', { detail: { level, year, term } }));
-}
-
-export function areResultsPublished(level: string, year: string, term: AcademicTerm): boolean {
-  return !!publicationMap()[publicationKey(level, year, term)];
-}
-
-export function publishedResultsForStudent(student: Student): AcademicSubjectResult[] {
-  return getSubjectResults(student.id).filter((r: AcademicSubjectResult) => {
-    const level = r.levelName || student.level;
-    const year = r.yearName || student.year;
-    const term = r.term as AcademicTerm;
-    return !!term && areResultsPublished(level, year, term);
-  });
-}
-
-export function studentPassedBothTerms(student: Student): { passed: boolean; reason: string } {
-  const subjects = getChantSubjects().filter(s => s.levelName === student.level && s.yearName === student.year && s.schoolClass === student.schoolClass);
-  if (!subjects.length) return { passed: false, reason: 'لا توجد مواد محددة لهذه السنة والفصل.' };
-  const results: AcademicSubjectResult[] = getSubjectResults(student.id).filter((r: AcademicSubjectResult) => r.levelIndex === student.levelIndex && r.yearIndex === student.yearIndex);
-  for (const term of ['الترم الأول', 'الترم الثاني'] as AcademicTerm[]) {
-    const termSubjects = subjects.filter(s => s.term === term);
-    if (!termSubjects.length) return { passed: false, reason: `لا توجد مواد محددة في ${term}.` };
-    for (const subject of termSubjects) {
-      const result = results.find((r: AcademicSubjectResult) => r.subjectName === subject.name && r.term === term);
-      if (!result) return { passed: false, reason: `لم تُرصد نتيجة ${subject.name} في ${term}.` };
-      const pct = result.maxScore > 0 ? (result.score / result.maxScore) * 100 : 0;
-      if (pct < 50) return { passed: false, reason: `الطالب أقل من 50% في ${subject.name} في ${term}.` };
-    }
-  }
-  return { passed: true, reason: 'ناجح في جميع مواد الترمين.' };
-}
+const RESULT_PUBLICATION_KEY='deacon_system_result_publication_v1';
+const SCHOOL_YEARS_ORDER=['الصف الأول الابتدائي','الصف الثاني الابتدائي','الصف الثالث الابتدائي','الصف الرابع الابتدائي','الصف الخامس الابتدائي','الصف السادس الابتدائي','الصف الأول الإعدادي','الصف الثاني الإعدادي','الصف الثالث الإعدادي','الصف الأول الثانوي','الصف الثاني الثانوي','الصف الثالث الثانوي','الجامعة - السنة الأولى','الجامعة - السنة الثانية','الجامعة - السنة الثالثة','الجامعة - السنة الرابعة','خريج / أخرى'];
+function schoolLevelForYear(year?:string):string|undefined{if(!year)return undefined;if(year.includes('الابتدائي'))return'المرحلة الابتدائية';if(year.includes('الإعدادي'))return'المرحلة الإعدادية';if(year.includes('الثانوي'))return'المرحلة الثانوية';if(year.includes('الجامعة'))return'المرحلة الجامعية';return'خريج / أخرى';}
+export function currentSchoolAcademicYear(date=new Date()):string{const y=date.getFullYear();const start=date.getMonth()>=8?y:y-1;return`${start}/${start+1}`;}
+export function nextSchoolYear(year?:string):string|undefined{if(!year)return undefined;const i=SCHOOL_YEARS_ORDER.indexOf(year);return i<0||i>=SCHOOL_YEARS_ORDER.length-1?year:SCHOOL_YEARS_ORDER[i+1];}
+/** Kept as a compatibility wrapper. The real annual transition is unified in schoolSystem.ts so a student can never be promoted twice in one cycle. */
+export function runAutomaticRegularSchoolPromotion(_force=false):{processed:boolean;advanced:number}{return{processed:false,advanced:0};}
+function publicationMap():Record<string,string>{try{return JSON.parse(localStorage.getItem(RESULT_PUBLICATION_KEY)||'{}');}catch{return{};}}
+function publicationKey(level:string,year:string,term:AcademicTerm){return`${level}::${year}::${term}`;}
+export function publishResults(level:string,year:string,term:AcademicTerm):void{const map=publicationMap();map[publicationKey(level,year,term)]=new Date().toISOString();localStorage.setItem(RESULT_PUBLICATION_KEY,JSON.stringify(map));getSubjectResults().filter((r:AcademicSubjectResult)=>(r.levelName||level)===level&&(r.yearName||year)===year&&r.term===term).forEach(r=>saveSubjectResult({...r,isApproved:true}));window.dispatchEvent(new CustomEvent('deacon_results_published',{detail:{level,year,term}}));}
+export function unpublishResults(level:string,year:string,term:AcademicTerm):void{const map=publicationMap();delete map[publicationKey(level,year,term)];localStorage.setItem(RESULT_PUBLICATION_KEY,JSON.stringify(map));getSubjectResults().filter((r:AcademicSubjectResult)=>(r.levelName||level)===level&&(r.yearName||year)===year&&r.term===term).forEach(r=>saveSubjectResult({...r,isApproved:false}));window.dispatchEvent(new CustomEvent('deacon_results_unpublished',{detail:{level,year,term}}));}
+export function areResultsPublished(level:string,year:string,term:AcademicTerm):boolean{return!!publicationMap()[publicationKey(level,year,term)];}
+export function publishedResultsForStudent(student:Student):AcademicSubjectResult[]{return getSubjectResults(student.id).filter(r=>{const level=r.levelName||student.level,year=r.yearName||student.year,term=r.term as AcademicTerm;return!!term&&areResultsPublished(level,year,term);});}
+export function studentPassedBothTerms(student:Student):{passed:boolean;reason:string}{const subjects=getChantSubjects().filter(s=>s.levelName===student.level&&s.yearName===student.year&&s.schoolClass===student.schoolClass);if(!subjects.length)return{passed:false,reason:'لا توجد مواد محددة لهذه السنة والفصل.'};const results=getSubjectResults(student.id).filter(r=>r.levelIndex===student.levelIndex&&r.yearIndex===student.yearIndex);for(const term of ['الترم الأول','الترم الثاني'] as AcademicTerm[]){const termSubjects=subjects.filter(s=>s.term===term);if(!termSubjects.length)return{passed:false,reason:`لا توجد مواد محددة في ${term}.`};for(const subject of termSubjects){const result=results.find(r=>r.subjectName===subject.name&&r.term===term);if(!result)return{passed:false,reason:`لم تُرصد نتيجة ${subject.name} في ${term}.`};const pct=result.maxScore>0?(result.score/result.maxScore)*100:0;if(pct<50)return{passed:false,reason:`الطالب أقل من 50% في ${subject.name} في ${term}.`};}}return{passed:true,reason:'ناجح في جميع مواد الترمين.'};}
