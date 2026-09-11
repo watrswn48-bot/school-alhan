@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { BellRing, BookOpen, Camera, Plus, Save, X, Star } from 'lucide-react';
-import { Lecture, UserSession } from '../types';
-import { SCHOOL_CLASSES, closeLectureAndMarkAbsent, getAcademicLevels, getAcademicYears, getLectureAttendances, getLectures, getServants, getStudents, recordLectureAttendance, saveLecture, saveLectureEvaluation } from '../services/storage';
+import { UserSession } from '../types';
+import { closeLectureAndMarkAbsent, getAcademicLevels, getAcademicYears, getLectureAttendances, getLectures, getServants, getStudents, recordLectureAttendance, saveLecture, saveLectureEvaluation } from '../services/storage';
+import { SCHOOL_CLASSES } from '../services/schoolClassUtils';
 import { canEvaluateLecture, isAllowedLecturer, lecturesNeedingEvaluation } from '../services/schoolSystem';
 import { sessionHasPermission } from '../services/permissions';
 import { egyptDateString } from '../services/egyptTime';
@@ -12,7 +13,6 @@ export const LectureSystemModule: React.FC<{ session: UserSession }> = ({ sessio
   const lectures = useMemo(()=>getLectures(),[version]);
   const students=getStudents().filter(s=>!s.isDeleted); const servants=getServants(); const lecturers=servants.filter(isAllowedLecturer); const isAdmin=session.role==='admin'||session.userId==='srv-admin-01';
   const canRecord=isAdmin||sessionHasPermission(session,'canRecordAttendance'); const canManage=isAdmin||sessionHasPermission(session,'canManageLectures'); const canEvaluatePermission=isAdmin||sessionHasPermission(session,'canEvaluateLectures');
-  // في قائمة المحاضرات نظهر فقط المحاضرات النشطة، أو المحاضرات المنتهية التي ما زالت تحتاج تقييمًا لهذا المستخدم.
   const visibleLectures = useMemo(()=>lectures.filter(l => l.status === 'active' || (l.status === 'elapsed' && !l.isEvaluated && canEvaluatePermission && canEvaluateLecture(l,session.userId,isAdmin))),[lectures,canEvaluatePermission,session.userId,isAdmin]);
   const selected=visibleLectures.find(l=>l.id===selectedId)||visibleLectures[0];
   const attendances=useMemo(()=>selected?getLectureAttendances().filter(a=>a.lectureId===selected.id):[],[selected?.id,version]);
