@@ -1,14 +1,12 @@
-export const SCHOOL_CLASSES = ['كيجي', 'أولى وتانية', 'تالتة ورابعة وخامسة وسادسة', 'إعدادي وثانوي'] as const;
+export const SCHOOL_CLASSES = ['كيجي', 'أولى وتانية', 'تالتة لستة', 'إعدادي', 'ثانوي'] as const;
 export type SchoolClass = typeof SCHOOL_CLASSES[number];
 
-/** Converts every legacy class label into the current combined school class. */
+/** Converts legacy labels into the single current class structure. */
 export function normalizeSchoolClass(value?: string | null): string {
   const v = String(value || '').trim();
   if (!v) return '';
-  if (v === 'تالتة ورابعة' || v === 'خامسة وسادسة' || v === 'تالتة' || v === 'رابعة' || v === 'خامسة' || v === 'سادسة') {
-    return 'تالتة ورابعة وخامسة وسادسة';
-  }
-  if (v === 'إعدادي' || v === 'ثانوي') return 'إعدادي وثانوي';
+  if (v === 'تالتة ورابعة' || v === 'خامسة وسادسة' || v === 'تالتة ورابعة وخامسة وسادسة' || v === 'تالتة' || v === 'رابعة' || v === 'خامسة' || v === 'سادسة') return 'تالتة لستة';
+  if (v === 'إعدادي وثانوي') return 'إعدادي';
   return v;
 }
 
