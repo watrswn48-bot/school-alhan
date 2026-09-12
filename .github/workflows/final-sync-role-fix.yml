@@ -1,0 +1,75 @@
+name: Final sync and role fix
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply safe source fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          # Firebase queue writes must rethrow errors so failed cloud writes remain queued.
+          p = Path('src/services/firebaseService.ts')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace("console.warn('Firebase lecture sync error:', error);\n  }\n}\n\nexport async function deleteLectureFromCloud", "console.warn('Firebase lecture sync error:', error);\n    throw error;\n  }\n}\n\nexport async function deleteLectureFromCloud")
+          s = s.replace("console.warn('Firebase lecture delete error:', error);\n  }\n}\n\nexport async function syncLectureAttendanceToCloud", "console.warn('Firebase lecture delete error:', error);\n    throw error;\n  }\n}\n\nexport async function syncLectureAttendanceToCloud")
+          s = s.replace("console.warn('Firebase lecture attendance sync error:', error);\n  }\n}\n\nexport async function syncSubjectResultToCloud", "console.warn('Firebase lecture attendance sync error:', error);\n    throw error;\n  }\n}\n\nexport async function syncSubjectResultToCloud")
+          p.write_text(s, encoding='utf-8')
+
+          # Normalize legacy role names everywhere in the admin UI without deleting any module.
+          p = Path('src/components/AdminPanelModule.tsx')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('أمين الأسرة', 'خادم كبير')
+          s = s.replace('family_admin', 'senior_servant')
+          s = s.replace("'servant'", "'junior_servant'")
+          s = s.replace('"servant"', '"junior_servant"')
+          # If an old role-options array still contains a fourth legacy value, remove only that value.
+          s = re.sub(r"[, ]*['\"]family_admin['\"]", '', s)
+          s = re.sub(r"[, ]*['\"]servant['\"]", '', s)
+          p.write_text(s, encoding='utf-8')
+
+          # Keep legacy persisted values readable but expose only the three current roles.
+          p = Path('src/services/permissions.ts')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace("if ((role as string) === 'family_admin' || (role as string) === 'senior_servant') return 'senior_servant';", "if ((role as string) === 'family_admin' || (role as string) === 'senior_servant' || (role as string) === 'servant') return 'senior_servant';")
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          echo '--- remaining legacy role strings ---'
+          grep -RInE "أمين الأسرة|family_admin|(['\"]servant['\"])" src --exclude-dir=node_modules || true
+
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Commit fixes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/services/firebaseService.ts src/components/AdminPanelModule.tsx src/services/permissions.ts
+          if git diff --cached --quiet; then
+            echo 'No source changes to commit.'
+          else
+            git commit -m 'Fix lecture cloud sync and enforce three servant roles'
+            git push origin main
+          fi
+      - name: Remove one-time workflow
+        if: always()
+        run: |
+          git rm -f .github/workflows/final-sync-role-fix.yml || true
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'Remove one-time repair workflow'
+          git push origin main
