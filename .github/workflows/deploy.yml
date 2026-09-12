@@ -20,15 +20,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Run one-time core repair
-        if: ${{ hashFiles('.github/workflows/repair-core-sync.yml') != '' }}
-        run: |
-          python3 scripts/repair_core.py
-          rm -f .github/workflows/repair-core-sync.yml REPAIR_TRIGGER.txt
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src firestore.rules scripts/repair_core.py .github/workflows/repair-core-sync.yml REPAIR_TRIGGER.txt
-          git diff --cached --quiet || (git commit -m "Fix Firebase sync and enforce three servant roles" && git push)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
