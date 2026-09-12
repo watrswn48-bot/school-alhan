@@ -1,6 +1,6 @@
 /**
  * Module 3: CUMULATIVE STUDENT PROFILE (الملف الشخصي التراكمي للطالب)
- * الهيكل التراكمي للمراحل والسنوات الدراسية مع الشريط العلوي والتبويبات الـ 4 التفاعلية
+ * الهيكل التراكمي للمراحل والسنوات الدراسية مع الشريط العلوي والتبويبات الـ 5 التفاعلية
  */
 
 import React, { useState } from 'react';
@@ -53,6 +53,7 @@ import {
 } from '../services/storage';
 import { areResultsPublished } from '../services/academicYearService';
 import { AcademicTerm } from '../services/schoolSystem';
+import { CurriculaModule } from './CurriculaModule';
 
 interface CumulativeProfileModalProps {
   student: Student;
@@ -75,7 +76,7 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
   const years = getAcademicYears();
   const [selectedLevelIdx, setSelectedLevelIdx] = useState<number>(student.levelIndex);
   const [selectedYearIdx, setSelectedYearIdx] = useState<number>(student.yearIndex);
-  const [activeTab, setActiveTab] = useState<'liturgies' | 'lectures' | 'grades' | 'behavior'>('liturgies');
+  const [activeTab, setActiveTab] = useState<'liturgies' | 'lectures' | 'grades' | 'behavior' | 'curricula'>('liturgies');
 
   // Logs & Results State
   const liturgyLogs = getLiturgyAttendances().filter((l) => l.studentId === student.id);
@@ -349,11 +350,11 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
                 </div>
               )}
 
-              {/* 4 INTERACTIVE TABS */}
-              <div className="flex border-b border-slate-800 gap-2">
+              {/* 5 INTERACTIVE TABS */}
+              <div className="flex border-b border-slate-800 gap-2 overflow-x-auto min-w-0">
                 <button
                   onClick={() => setActiveTab('liturgies')}
-                  className={`py-2.5 px-4 rounded-t-2xl font-bold text-xs transition-all flex items-center gap-2 border-b-2 ${
+                  className={`py-2.5 px-4 rounded-t-2xl font-bold text-xs transition-all flex items-center gap-2 border-b-2 whitespace-nowrap ${
                     activeTab === 'liturgies'
                       ? 'border-amber-500 text-amber-400 bg-slate-800/60'
                       : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -365,7 +366,7 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
 
                 <button
                   onClick={() => setActiveTab('lectures')}
-                  className={`py-2.5 px-4 rounded-t-2xl font-bold text-xs transition-all flex items-center gap-2 border-b-2 ${
+                  className={`py-2.5 px-4 rounded-t-2xl font-bold text-xs transition-all flex items-center gap-2 border-b-2 whitespace-nowrap ${
                     activeTab === 'lectures'
                       ? 'border-amber-500 text-amber-400 bg-slate-800/60'
                       : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -377,7 +378,7 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
 
                 <button
                   onClick={() => setActiveTab('grades')}
-                  className={`py-2.5 px-4 rounded-t-2xl font-bold text-xs transition-all flex items-center gap-2 border-b-2 ${
+                  className={`py-2.5 px-4 rounded-t-2xl font-bold text-xs transition-all flex items-center gap-2 border-b-2 whitespace-nowrap ${
                     activeTab === 'grades'
                       ? 'border-amber-500 text-amber-400 bg-slate-800/60'
                       : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -388,8 +389,20 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
                 </button>
 
                 <button
+                  onClick={() => setActiveTab('curricula')}
+                  className={`py-2.5 px-4 rounded-t-2xl font-bold text-xs transition-all flex items-center gap-2 border-b-2 whitespace-nowrap ${
+                    activeTab === 'curricula'
+                      ? 'border-amber-500 text-amber-400 bg-slate-800/60'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  مناهجي
+                </button>
+
+                <button
                   onClick={() => setActiveTab('behavior')}
-                  className={`py-2.5 px-4 rounded-t-2xl font-bold text-xs transition-all flex items-center gap-2 border-b-2 ${
+                  className={`py-2.5 px-4 rounded-t-2xl font-bold text-xs transition-all flex items-center gap-2 border-b-2 whitespace-nowrap ${
                     activeTab === 'behavior'
                       ? 'border-amber-500 text-amber-400 bg-slate-800/60'
                       : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -770,6 +783,17 @@ export const CumulativeProfileModal: React.FC<CumulativeProfileModalProps> = ({
               )}
 
               {/* TAB 5: CURRICULA & HYMNS FOR THIS STAGE */}
+              {activeTab === 'curricula' && (
+                <div className="animate-fade-in -mx-2 sm:-mx-3">
+                  <CurriculaModule
+                    session={session}
+                    studentLevel={levels[selectedLevelIdx]}
+                    studentYear={years[selectedYearIdx]}
+                    studentClass={student.schoolClass}
+                    isStudentPortal={true}
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
