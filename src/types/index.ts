@@ -3,7 +3,7 @@
  * منصة الشماس والأكاديمية - نظام إدارة مدرسة الشمامسة
  */
 
-export type DeaconRank = 'بدون رتبة' | 'لم يشرس' | 'إبصالتس' | 'أغنسطس' | 'إبذياكون' | 'عريف' | 'دياكون' | 'أرشيدياكون';
+export type DeaconRank = 'بدون رتبة' | 'لم يشرس' | 'إبصالتس' | 'أغنسطس' | 'إبذياكون' | 'دياكون' | 'أرشيدياكون';
 export type AcademicLevel = string;
 export type AcademicYear = string;
 export type YearStatus = 'passed' | 'failed' | 'active' | 'future';
