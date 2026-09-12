@@ -840,6 +840,7 @@ export function saveLecture(lec: Partial<Lecture>): Lecture {
     title: lec.title || 'محاضرة طقس وألحان',
     speaker: lec.speaker || 'أحد الخدام',
     speakerServantId: lec.speakerServantId,
+    schoolClass: lec.schoolClass,
     levelName: lec.levelName || ACADEMIC_LEVELS[0],
     yearName: lec.yearName,
     dateStr: lec.dateStr || new Date().toISOString().split('T')[0],
