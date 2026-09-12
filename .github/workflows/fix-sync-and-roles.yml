@@ -1,0 +1,91 @@
+name: Fix sync and roles
+on:
+  push:
+    branches: [main]
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Repair sync engine and role UI
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          # 1) Critical sync bug: triggerFullSync was setting the global lock
+          # before calling processSyncQueue(), causing processSyncQueue() to
+          # immediately return without uploading anything.
+          p = Path('src/services/syncQueue.ts')
+          s = p.read_text(encoding='utf-8')
+          old = """  try {\n    isCurrentlySyncing = true;\n    notifyStatusChange();\n\n    // 1. Flush local queue to cloud\n    const { processed } = await processSyncQueue();"""
+          new = """  try {\n    // processSyncQueue() owns the sync lock. Do not set it here first,\n    // otherwise the queue sees an active sync and uploads nothing.\n    const { processed } = await processSyncQueue();"""
+          if old not in s:
+              raise SystemExit('Expected triggerFullSync lock block not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+
+          # 2) Make Firebase lecture/attendance writes fail loudly so the
+          # offline queue keeps them for retry instead of treating a rejected
+          # write as successfully processed.
+          p = Path('src/services/firebaseService.ts')
+          s = p.read_text(encoding='utf-8')
+          replacements = [
+            ("""  } catch (error) {\n    console.warn('Firebase lecture sync error:', error);\n  }\n}\n\nexport async function deleteLectureFromCloud""",
+             """  } catch (error) {\n    console.warn('Firebase lecture sync error:', error);\n    throw error;\n  }\n}\n\nexport async function deleteLectureFromCloud"""),
+            ("""  } catch (error) {\n    console.warn('Firebase lecture delete error:', error);\n  }\n}\n\nexport async function syncLectureAttendanceToCloud""",
+             """  } catch (error) {\n    console.warn('Firebase lecture delete error:', error);\n    throw error;\n  }\n}\n\nexport async function syncLectureAttendanceToCloud"""),
+            ("""  } catch (error) {\n    console.warn('Firebase lecture attendance sync error:', error);\n  }\n}\n\nexport async function syncSubjectResultToCloud""",
+             """  } catch (error) {\n    console.warn('Firebase lecture attendance sync error:', error);\n    throw error;\n  }\n}\n\nexport async function syncSubjectResultToCloud"""),
+          ]
+          for old,new in replacements:
+              if old not in s:
+                  raise SystemExit('Expected Firebase error handler block not found')
+              s = s.replace(old,new,1)
+          p.write_text(s, encoding='utf-8')
+
+          # 3) Normalize legacy persisted servant roles to the only three roles.
+          # This is intentionally non-destructive: old family_admin becomes
+          # senior_servant; unknown legacy values become junior_servant.
+          p = Path('src/services/permissions.ts')
+          if p.exists():
+              s = p.read_text(encoding='utf-8')
+              s = s.replace("if ((role as string) === 'family_admin' || (role as string) === 'senior_servant') return 'senior_servant';", "if ((role as string) === 'family_admin' || (role as string) === 'senior_servant' || (role as string) === 'servant') return 'senior_servant';")
+              p.write_text(s, encoding='utf-8')
+
+          # 4) Remove any fourth-role option/label from AdminPanelModule while
+          # preserving the existing permission editor and all other UI.
+          p = Path('src/components/AdminPanelModule.tsx')
+          if p.exists():
+              s = p.read_text(encoding='utf-8')
+              for text in ['أمين الأسرة', 'family_admin']:
+                  s = s.replace(text, 'خادم كبير' if text == 'أمين الأسرة' else 'senior_servant')
+              # Legacy role literals used by old forms.
+              s = s.replace("'servant'", "'junior_servant'")
+              p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit repairs
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/services/syncQueue.ts src/services/firebaseService.ts src/services/permissions.ts src/components/AdminPanelModule.tsx
+          git diff --cached --quiet || git commit -m "Fix Firebase lecture sync and legacy servant roles"
+          git push
+
+      - name: Remove one-time workflow
+        if: success()
+        shell: bash
+        run: |
+          git rm .github/workflows/fix-sync-and-roles.yml
+          git commit -m "Remove one-time sync repair workflow"
+          git push
