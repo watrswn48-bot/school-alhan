@@ -422,7 +422,7 @@ export async function initStorage(onDataUpdated?: () => void) {
   if (typeof navigator === 'undefined' || navigator.onLine) {
     try {
       const cloudData = await fetchAllDataFromFirebase();
-      if (cloudData && cloudData.students && cloudData.students.length > 0) {
+      if (cloudData) {
         applyCloudDataToLocal(cloudData, onDataUpdated);
       }
     } catch (err) {
@@ -501,7 +501,7 @@ function seedInitialData() {
       phone: '01001122334',
       secretCode: '777888',
       qrCode: 'SRV-02',
-      role: 'servant',
+      role: 'junior_servant',
       permissions: {
         canAddEditStudents: true,
         canSetRatings: true,

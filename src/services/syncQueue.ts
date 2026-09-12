@@ -314,9 +314,8 @@ export async function triggerFullSync(onPullComplete?: (data: any) => void): Pro
   }
 
   try {
-    isCurrentlySyncing = true;
-    notifyStatusChange();
-
+    // processSyncQueue owns the syncing lock. Do not set it before calling it,
+    // otherwise processSyncQueue sees an active sync and refuses to flush the queue.
     // 1. Flush local queue to cloud
     const { processed } = await processSyncQueue();
 
