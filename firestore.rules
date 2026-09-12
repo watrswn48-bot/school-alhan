@@ -1,11 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // The app currently uses a custom client session rather than Firebase Authentication.
-    // Never expose the database publicly. Until Firebase Auth is wired to every request,
-    // deny direct client access so credentials/session spoofing cannot grant database access.
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if request.auth != null;
     }
   }
 }
