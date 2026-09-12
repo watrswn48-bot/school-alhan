@@ -1,4 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 import {
   initializeFirestore,
   getFirestore,
@@ -30,6 +31,13 @@ try {
 }
 
 export const db: Firestore = firestoreDb;
+export const auth = getAuth(app);
+export const authReady: Promise<void> = signInAnonymously(auth)
+  .then(() => undefined)
+  .catch((error) => {
+    console.error('Firebase anonymous authentication failed:', error);
+    throw error;
+  });
+
 export { app };
 export default db;
-
