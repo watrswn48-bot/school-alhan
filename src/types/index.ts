@@ -9,7 +9,7 @@ export type AcademicYear = string;
 export type YearStatus = 'passed' | 'failed' | 'active' | 'future';
 
 export interface ServantPermissions { canRecordAttendance?: boolean; canAddEditStudents?: boolean; canUploadFiles?: boolean; canSetRatings?: boolean; canEvaluateLectures?: boolean; canTeachLectures?: boolean; canWriteNotes?: boolean; canViewAnalytics?: boolean; canManageLectures?: boolean; canManageCurricula?: boolean; canManageGrades?: boolean; canManageSubjects?: boolean; canManageAcademicYear?: boolean; canViewAdminPanel?: boolean; [key: string]: boolean | undefined; }
-export type ServantRole = 'admin' | 'family_admin' | 'senior_servant' | 'junior_servant' | 'servant';
+export type ServantRole = 'admin' | 'senior_servant' | 'junior_servant';
 export interface Servant { id: string; fullName: string; phone: string; secretCode: string; qrCode: string; role: ServantRole; permissions: ServantPermissions; isActive: boolean; createdAt: string; }
 export interface YearProgress { levelIndex: number; yearIndex: number; levelName: AcademicLevel; yearName: AcademicYear; status: YearStatus; liturgyAttendanceRate?: number; lectureAttendanceRate?: number; examScore?: number; notes?: string; archivedAt?: string; }
 export interface AnnualStudentRecord { academicYear: string; schoolLevel?: string; schoolYear?: string; chantLevel: string; chantYear: string; levelIndex: number; yearIndex: number; archivedAt: string; }
