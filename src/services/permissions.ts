@@ -9,13 +9,48 @@ export const PERMISSION_LABELS: Record<string, string> = {
 };
 
 export const ADMIN_PERMISSIONS: ServantPermissions = Object.fromEntries(ALL_SERVANT_PERMISSIONS.map(key => [key, true])) as ServantPermissions;
-export const FAMILY_ADMIN_PERMISSIONS: ServantPermissions = { canRecordAttendance: true, canUploadFiles: true, canEvaluateLectures: true, canTeachLectures: true, canManageLectures: true };
-export const SENIOR_SERVANT_PERMISSIONS: ServantPermissions = { canRecordAttendance: true, canTeachLectures: true, canEvaluateLectures: true };
+export const SENIOR_SERVANT_PERMISSIONS: ServantPermissions = { canRecordAttendance: true, canTeachLectures: true, canEvaluateLectures: true, canManageLectures: true };
 export const JUNIOR_SERVANT_PERMISSIONS: ServantPermissions = { canRecordAttendance: true };
 
-export function normalizeRole(role?: ServantRole): ServantRole { if (!role || role === 'servant') return 'junior_servant'; return role; }
-export function permissionsForRole(role: ServantRole): ServantPermissions { const actual=normalizeRole(role); if(actual==='admin')return{...ADMIN_PERMISSIONS}; if(actual==='family_admin')return{...FAMILY_ADMIN_PERMISSIONS}; if(actual==='senior_servant')return{...SENIOR_SERVANT_PERMISSIONS}; return{...JUNIOR_SERVANT_PERMISSIONS}; }
-export function normalizeServantPermissions(role: ServantRole|undefined, permissions?: ServantPermissions): ServantPermissions { const actualRole=normalizeRole(role); const base=permissionsForRole(actualRole); const incoming=permissions||{}; for(const key of ALL_SERVANT_PERMISSIONS){if(incoming[key]!==undefined)base[key]=incoming[key];} if(actualRole==='admin')return{...ADMIN_PERMISSIONS}; if(incoming.canRecordAttendance===undefined)base.canRecordAttendance=true; return base; }
-export function normalizeServant(servant: Servant): Servant { const role=normalizeRole(servant.role); return {...servant,role,permissions:normalizeServantPermissions(role,servant.permissions)}; }
-export function sessionHasPermission(session: UserSession|undefined, permission:keyof ServantPermissions):boolean { if(!session?.isLoggedIn||session.mode!=='servant')return false; if(session.role==='admin'||session.userId==='srv-admin-01')return true; return !!normalizeServantPermissions(session.role,session.permissions)[permission]; }
-export function roleLabel(role?: ServantRole):string { const actual=normalizeRole(role); if(actual==='admin')return'أبونا'; if(actual==='family_admin')return'أمين الأسرة'; if(actual==='senior_servant')return'خادم كبير'; return'خادم صغير'; }
+export function normalizeRole(role?: ServantRole): ServantRole {
+  if (role === 'admin') return 'admin';
+  if ((role as string) === 'family_admin' || role === 'senior_servant') return 'senior_servant';
+  return 'junior_servant';
+}
+
+export function permissionsForRole(role: ServantRole): ServantPermissions {
+  const actual = normalizeRole(role);
+  if (actual === 'admin') return { ...ADMIN_PERMISSIONS };
+  if (actual === 'senior_servant') return { ...SENIOR_SERVANT_PERMISSIONS };
+  return { ...JUNIOR_SERVANT_PERMISSIONS };
+}
+
+export function normalizeServantPermissions(role: ServantRole | undefined, permissions?: ServantPermissions): ServantPermissions {
+  const actualRole = normalizeRole(role);
+  const base = permissionsForRole(actualRole);
+  const incoming = permissions || {};
+  for (const key of ALL_SERVANT_PERMISSIONS) {
+    if (incoming[key] !== undefined) base[key] = incoming[key];
+  }
+  if (actualRole === 'admin') return { ...ADMIN_PERMISSIONS };
+  if (incoming.canRecordAttendance === undefined) base.canRecordAttendance = true;
+  return base;
+}
+
+export function normalizeServant(servant: Servant): Servant {
+  const role = normalizeRole(servant.role);
+  return { ...servant, role, permissions: normalizeServantPermissions(role, servant.permissions) };
+}
+
+export function sessionHasPermission(session: UserSession | undefined, permission: keyof ServantPermissions): boolean {
+  if (!session?.isLoggedIn || session.mode !== 'servant') return false;
+  if (session.role === 'admin' || session.userId === 'srv-admin-01') return true;
+  return !!normalizeServantPermissions(session.role, session.permissions)[permission];
+}
+
+export function roleLabel(role?: ServantRole): string {
+  const actual = normalizeRole(role);
+  if (actual === 'admin') return 'أبونا';
+  if (actual === 'senior_servant') return 'خادم كبير';
+  return 'خادم صغير';
+}
