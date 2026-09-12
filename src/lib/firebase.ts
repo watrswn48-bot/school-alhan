@@ -10,16 +10,15 @@ import {
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-
 const databaseId = firebaseConfig.firestoreDatabaseId || undefined;
 
 let firestoreDb: Firestore;
-
 try {
+  // Let Firestore choose the fastest available transport. The previous forced
+  // long-polling transport made realtime updates noticeably slow.
   firestoreDb = initializeFirestore(
     app,
     {
-      experimentalForceLongPolling: true,
       localCache: persistentLocalCache({
         tabManager: persistentMultipleTabManager(),
       }),
