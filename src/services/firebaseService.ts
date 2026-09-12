@@ -2,7 +2,7 @@ import { collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, writeBatch } f
 import { db, authReady } from '../lib/firebase';
 import { Student, Servant, LiturgyAttendance, Lecture, LectureAttendance, AcademicSubjectResult, BehaviorNote, CurriculumMaterial } from '../types';
 
-export const COLLECTIONS = { STUDENTS:'students', SERVANTS:'servants', LITURGIES:'liturgies', LECTURES:'lectures', LECTURE_ATTENDANCE:'lecture_attendance', SUBJECT_RESULTS:'subject_results', BEHAVIOR_NOTES:'behavior_notes', SYSTEM_SETTINGS:'system_settings', CURRICULA:'curricula' };
+export const COLLECTIONS = { STUDENTS:'students', SERVANTS:'servants', LITURGIES:'liturgies', LECTURES:'lectures', LECTURE_ATTENDANCE:'lecture_attendance', SUBJECT_RESULTS:'subject_results', BEHAVIOR_NOTES:'behavior_notes', SYSTEM_SETTINGS:'system_settings', CURRICULA:'curricula' } as const;
 export function sanitizeForFirestore<T>(data:T):Record<string,unknown>{return JSON.parse(JSON.stringify(data,(_,v)=>v===undefined?null:v));}
 async function ready(){await authReady;}
 
@@ -35,4 +35,21 @@ export async function fetchAllDataFromFirebase():Promise<{students:Student[];ser
   try{await ready();const [studentsSnap,servantsSnap,liturgiesSnap,lecturesSnap,lectureAttSnap,subjectsSnap,notesSnap,curriculaSnap,settingsSnap]=await Promise.all([getDocs(collection(db,COLLECTIONS.STUDENTS)),getDocs(collection(db,COLLECTIONS.SERVANTS)),getDocs(collection(db,COLLECTIONS.LITURGIES)),getDocs(collection(db,COLLECTIONS.LECTURES)),getDocs(collection(db,COLLECTIONS.LECTURE_ATTENDANCE)),getDocs(collection(db,COLLECTIONS.SUBJECT_RESULTS)),getDocs(collection(db,COLLECTIONS.BEHAVIOR_NOTES)),getDocs(collection(db,COLLECTIONS.CURRICULA)),getDocs(collection(db,COLLECTIONS.SYSTEM_SETTINGS))]);let academicLevels:string[]|undefined;let academicYears:string[]|undefined;let schoolLogo:string|undefined;settingsSnap.docs.forEach(d=>{const x=d.data();if(d.id==='academic_structure'){academicLevels=x.levels;academicYears=x.years;}if(d.id==='school_branding')schoolLogo=x.logoUrl;});return{students:studentsSnap.docs.map(d=>d.data() as Student),servants:servantsSnap.docs.map(d=>d.data() as Servant),liturgies:liturgiesSnap.docs.map(d=>d.data() as LiturgyAttendance),lectures:lecturesSnap.docs.map(d=>d.data() as Lecture),lectureAttendance:lectureAttSnap.docs.map(d=>d.data() as LectureAttendance),subjectResults:subjectsSnap.docs.map(d=>d.data() as AcademicSubjectResult),behaviorNotes:notesSnap.docs.map(d=>d.data() as BehaviorNote),curricula:curriculaSnap.docs.map(d=>d.data() as CurriculumMaterial),academicLevels,academicYears,schoolLogo};}catch(error){console.error('Failed to pull from Firebase:',error);return null;}
 }
 
-export function listenToFirebaseUpdates(onUpdate:()=>void):()=>void{let active=true;const unsubs:(()=>void)[]=[];authReady.then(()=>{if(!active)return;const watch=(name:string)=>onSnapshot(collection(db,name),()=>onUpdate(),err=>console.warn(`${name} listener:`,err));[COLLECTIONS.STUDENTS,COLLECTIONS.SERVANTS,COLLECTIONS.LITURGIES,COLLECTIONS.LECTURES,COLLECTIONS.LECTURE_ATTENDANCE,COLLECTIONS.SUBJECT_RESULTS,COLLECTIONS.BEHAVIOR_NOTES,COLLECTIONS.CURRICULA,COLLECTIONS.SYSTEM_SETTINGS].forEach(name=>unsubs.push(watch(name)));}).catch(err=>console.warn('Firebase listener authentication:',err));return()=>{active=false;unsubs.splice(0).forEach(u=>u());};}
+export function listenToFirebaseUpdates(onUpdate:()=>void):()=>void{
+  let active=true;
+  let timer:ReturnType<typeof setTimeout>|undefined;
+  let scheduled=false;
+  const unsubs:(()=>void)[]=[];
+  const schedule=()=>{
+    if(!active||scheduled)return;
+    scheduled=true;
+    if(timer)clearTimeout(timer);
+    timer=setTimeout(()=>{scheduled=false;if(active)onUpdate();},350);
+  };
+  authReady.then(()=>{
+    if(!active)return;
+    const watch=(name:string)=>onSnapshot(collection(db,name),()=>schedule(),err=>console.warn(`${name} listener:`,err));
+    [COLLECTIONS.STUDENTS,COLLECTIONS.SERVANTS,COLLECTIONS.LITURGIES,COLLECTIONS.LECTURES,COLLECTIONS.LECTURE_ATTENDANCE,COLLECTIONS.SUBJECT_RESULTS,COLLECTIONS.BEHAVIOR_NOTES,COLLECTIONS.CURRICULA,COLLECTIONS.SYSTEM_SETTINGS].forEach(name=>unsubs.push(watch(name)));
+  }).catch(err=>console.warn('Firebase listener authentication:',err));
+  return()=>{active=false;scheduled=false;if(timer)clearTimeout(timer);unsubs.splice(0).forEach(u=>u());};
+}
