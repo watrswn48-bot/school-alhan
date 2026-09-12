@@ -14,25 +14,41 @@ export function sanitizeForFirestore<T>(data: T): Record<string, unknown> {
 
 async function ready() { await authReady; }
 
-export async function syncStudentToCloud(student: Student): Promise<void> { await ready(); await setDoc(doc(db, COLLECTIONS.STUDENTS, student.id), sanitizeForFirestore(student), { merge: true }); }
-export async function deleteStudentFromCloud(id: string): Promise<void> { await ready(); await deleteDoc(doc(db, COLLECTIONS.STUDENTS, id)); }
-export async function syncServantToCloud(servant: Servant): Promise<void> { await ready(); await setDoc(doc(db, COLLECTIONS.SERVANTS, servant.id), sanitizeForFirestore(servant), { merge: true }); }
-export async function deleteServantFromCloud(id: string): Promise<void> { await ready(); await deleteDoc(doc(db, COLLECTIONS.SERVANTS, id)); }
-export async function syncLiturgyAttendanceToCloud(record: LiturgyAttendance): Promise<void> { await ready(); await setDoc(doc(db, COLLECTIONS.LITURGIES, record.id), sanitizeForFirestore(record), { merge: true }); }
-export async function syncLectureToCloud(lecture: Lecture): Promise<void> { await ready(); await setDoc(doc(db, COLLECTIONS.LECTURES, lecture.id), sanitizeForFirestore(lecture), { merge: true }); }
-export async function deleteLectureFromCloud(id: string): Promise<void> { await ready(); await deleteDoc(doc(db, COLLECTIONS.LECTURES, id)); }
-export async function syncLectureAttendanceToCloud(record: LectureAttendance): Promise<void> { await ready(); await setDoc(doc(db, COLLECTIONS.LECTURE_ATTENDANCE, record.id), sanitizeForFirestore(record), { merge: true }); }
-export async function syncSubjectResultToCloud(result: AcademicSubjectResult): Promise<void> { await ready(); await setDoc(doc(db, COLLECTIONS.SUBJECT_RESULTS, result.id), sanitizeForFirestore(result), { merge: true }); }
-export async function deleteSubjectResultFromCloud(id: string): Promise<void> { await ready(); await deleteDoc(doc(db, COLLECTIONS.SUBJECT_RESULTS, id)); }
-export async function syncBehaviorNoteToCloud(note: BehaviorNote): Promise<void> { await ready(); await setDoc(doc(db, COLLECTIONS.BEHAVIOR_NOTES, note.id), sanitizeForFirestore(note), { merge: true }); }
-export async function syncAcademicSettingsToCloud(levels: string[], years: string[]): Promise<void> { await ready(); await setDoc(doc(db, COLLECTIONS.SYSTEM_SETTINGS, 'academic_structure'), { levels, years, updatedAt: new Date().toISOString() }, { merge: true }); }
-export async function syncCurriculumToCloud(material: CurriculumMaterial): Promise<void> { await ready(); await setDoc(doc(db, COLLECTIONS.CURRICULA, material.id), sanitizeForFirestore(material), { merge: true }); }
-export async function deleteCurriculumFromCloud(id: string): Promise<void> { await ready(); await deleteDoc(doc(db, COLLECTIONS.CURRICULA, id)); }
-export async function syncSchoolLogoToCloud(logoUrl: string): Promise<void> { await ready(); await setDoc(doc(db, COLLECTIONS.SYSTEM_SETTINGS, 'school_branding'), { logoUrl, updatedAt: new Date().toISOString() }, { merge: true }); }
+export async function syncStudentToCloud(student: Student): Promise<void> {
+  await authReady; await ready(); await setDoc(doc(db, COLLECTIONS.STUDENTS, student.id), sanitizeForFirestore(student), { merge: true }); }
+export async function deleteStudentFromCloud(id: string): Promise<void> {
+  await authReady; await ready(); await deleteDoc(doc(db, COLLECTIONS.STUDENTS, id)); }
+export async function syncServantToCloud(servant: Servant): Promise<void> {
+  await authReady; await ready(); await setDoc(doc(db, COLLECTIONS.SERVANTS, servant.id), sanitizeForFirestore(servant), { merge: true }); }
+export async function deleteServantFromCloud(id: string): Promise<void> {
+  await authReady; await ready(); await deleteDoc(doc(db, COLLECTIONS.SERVANTS, id)); }
+export async function syncLiturgyAttendanceToCloud(record: LiturgyAttendance): Promise<void> {
+  await authReady; await ready(); await setDoc(doc(db, COLLECTIONS.LITURGIES, record.id), sanitizeForFirestore(record), { merge: true }); }
+export async function syncLectureToCloud(lecture: Lecture): Promise<void> {
+  await authReady; await ready(); await setDoc(doc(db, COLLECTIONS.LECTURES, lecture.id), sanitizeForFirestore(lecture), { merge: true }); }
+export async function deleteLectureFromCloud(id: string): Promise<void> {
+  await authReady; await ready(); await deleteDoc(doc(db, COLLECTIONS.LECTURES, id)); }
+export async function syncLectureAttendanceToCloud(record: LectureAttendance): Promise<void> {
+  await authReady; await ready(); await setDoc(doc(db, COLLECTIONS.LECTURE_ATTENDANCE, record.id), sanitizeForFirestore(record), { merge: true }); }
+export async function syncSubjectResultToCloud(result: AcademicSubjectResult): Promise<void> {
+  await authReady; await ready(); await setDoc(doc(db, COLLECTIONS.SUBJECT_RESULTS, result.id), sanitizeForFirestore(result), { merge: true }); }
+export async function deleteSubjectResultFromCloud(id: string): Promise<void> {
+  await authReady; await ready(); await deleteDoc(doc(db, COLLECTIONS.SUBJECT_RESULTS, id)); }
+export async function syncBehaviorNoteToCloud(note: BehaviorNote): Promise<void> {
+  await authReady; await ready(); await setDoc(doc(db, COLLECTIONS.BEHAVIOR_NOTES, note.id), sanitizeForFirestore(note), { merge: true }); }
+export async function syncAcademicSettingsToCloud(levels: string[], years: string[]): Promise<void> {
+  await authReady; await ready(); await setDoc(doc(db, COLLECTIONS.SYSTEM_SETTINGS, 'academic_structure'), { levels, years, updatedAt: new Date().toISOString() }, { merge: true }); }
+export async function syncCurriculumToCloud(material: CurriculumMaterial): Promise<void> {
+  await authReady; await ready(); await setDoc(doc(db, COLLECTIONS.CURRICULA, material.id), sanitizeForFirestore(material), { merge: true }); }
+export async function deleteCurriculumFromCloud(id: string): Promise<void> {
+  await authReady; await ready(); await deleteDoc(doc(db, COLLECTIONS.CURRICULA, id)); }
+export async function syncSchoolLogoToCloud(logoUrl: string): Promise<void> {
+  await authReady; await ready(); await setDoc(doc(db, COLLECTIONS.SYSTEM_SETTINGS, 'school_branding'), { logoUrl, updatedAt: new Date().toISOString() }, { merge: true }); }
 export async function syncChantSubjectToCloud(subject: { id: string }): Promise<void> { await ready(); await setDoc(doc(db, 'chantSubjects', subject.id), sanitizeForFirestore(subject), { merge: true }); }
 export async function deleteChantSubjectFromCloud(id: string): Promise<void> { await ready(); await deleteDoc(doc(db, 'chantSubjects', id)); }
 
 export async function uploadAllLocalDataToFirebase(data: {
+  await authReady;
   students: Student[]; servants: Servant[]; liturgies: LiturgyAttendance[]; lectures: Lecture[];
   lectureAttendance: LectureAttendance[]; subjectResults: AcademicSubjectResult[]; behaviorNotes: BehaviorNote[];
   curricula?: CurriculumMaterial[]; academicLevels: string[]; academicYears: string[];
@@ -63,6 +79,7 @@ export async function uploadAllLocalDataToFirebase(data: {
 }
 
 export async function fetchAllDataFromFirebase(): Promise<{
+  await authReady;
   students: Student[]; servants: Servant[]; liturgies: LiturgyAttendance[]; lectures: Lecture[];
   lectureAttendance: LectureAttendance[]; subjectResults: AcademicSubjectResult[]; behaviorNotes: BehaviorNote[];
   curricula?: CurriculumMaterial[]; academicLevels?: string[]; academicYears?: string[]; schoolLogo?: string;

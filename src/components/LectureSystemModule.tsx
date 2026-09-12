@@ -18,24 +18,8 @@ export const LectureSystemModule: React.FC<{ session: UserSession }> = ({ sessio
   const students=getStudents().filter(s=>!s.isDeleted); const servants=getServants(); const lecturers=servants.filter(isAllowedLecturer); const isAdmin=session.role==='admin'||session.userId==='srv-admin-01';
   const canRecord=isAdmin||sessionHasPermission(session,'canRecordAttendance'); const canManage=isAdmin||sessionHasPermission(session,'canManageLectures'); const canEvaluatePermission=isAdmin||sessionHasPermission(session,'canEvaluateLectures');
 
-  // Remove legacy lectures created before the class field was mandatory.
-  // Those old records were the source of the repeated "بدون فصل" lectures.
-  useEffect(()=>{
-    const current=getLectures();
-    const legacy=current.filter(l=>!l.schoolClass || !SCHOOL_CLASSES.includes(normalizeSchoolClass(l.schoolClass)));
-    if(legacy.length===0)return;
-    const legacyIds=new Set(legacy.map(l=>l.id));
-    const cleaned=current.filter(l=>!legacyIds.has(l.id));
-    localStorage.setItem(LECTURES_KEY,JSON.stringify(cleaned));
-    legacy.forEach(l=>enqueueMutation('delete_lecture',l.id));
-    const attendances=getLectureAttendances();
-    const cleanedAttendances=attendances.filter(a=>!legacyIds.has(a.lectureId));
-    if(cleanedAttendances.length!==attendances.length)localStorage.setItem(LECTURE_ATTENDANCE_KEY,JSON.stringify(cleanedAttendances));
-    if(selectedId&&legacyIds.has(selectedId))setSelectedId('');
-    setVersion(v=>v+1);
-  },[]);
 
-  const visibleLectures = useMemo(()=>lectures.filter(l => l.schoolClass && SCHOOL_CLASSES.includes(normalizeSchoolClass(l.schoolClass)) && (l.status === 'active' || (l.status === 'elapsed' && !l.isEvaluated && canEvaluatePermission && canEvaluateLecture(l,session.userId,isAdmin)))),[lectures,canEvaluatePermission,session.userId,isAdmin]);
+  const visibleLectures = useMemo(()=>lectures.filter(l => (!l.schoolClass || SCHOOL_CLASSES.includes(normalizeSchoolClass(l.schoolClass))) && (l.status === 'active' || (l.status === 'elapsed' && !l.isEvaluated && canEvaluatePermission && canEvaluateLecture(l,session.userId,isAdmin)))),[lectures,canEvaluatePermission,session.userId,isAdmin]);
   const selected=visibleLectures.find(l=>l.id===selectedId)||visibleLectures[0];
   const attendances=useMemo(()=>selected?getLectureAttendances().filter(a=>a.lectureId===selected.id):[],[selected?.id,version]);
   const notifications=lecturesNeedingEvaluation(visibleLectures,session.userId,isAdmin);
